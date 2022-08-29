@@ -7,5 +7,17 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Lasana Murray <info@quenk.com> (http://quenk.com/)",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@quenk/noni": "^1.43.5",
+    "@quenk/preconditions": "^5.6.0",
+    "@quenk/tendril": "^0.43.4",
+    "@quenk/wml": "^2.13.1"
+  },
+  "devDependencies": {
+    "@types/express-session": "^1.17.5",
+    "@types/morgan": "^1.9.3",
+    "@types/node": "^18.7.13",
+    "typescript": "^4.8.2"
+  }
 }
