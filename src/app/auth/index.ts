@@ -17,7 +17,7 @@ import { Action, doAction } from '@quenk/tendril/lib/app/api';
 import { fork, next } from '@quenk/tendril/lib/app/api/control';
 import { redirect, unauthorized } from '@quenk/tendril/lib/app/api/response';
 
-import { render } from './views/engine/wml';
+import { render } from '../views/engine/wml';
 
 /**
  * AuthResult that is either a set of context values that can
