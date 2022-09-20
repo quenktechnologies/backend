@@ -177,13 +177,13 @@ export abstract class AuthController {
     authContextKey = 'auth';
 
     /**
-     * checkAuth produces a filter that can be included in a route to ensure
+     * ensureAuth produces a filter that can be included in a route to ensure
      * the user is authenticated before proceeding.
      *
      * @param isXHR - If true, responds with a status code only on failure,
      *                redirects to the auth form otherwise.
      */
-    checkAuth = (isXHR = false) => (req: Request): Action<void> => {
+    ensureAuth = (isXHR = false) => (req: Request): Action<void> => {
 
         if (req.session.exists(this.userSessionKey)) return next(req);
 
