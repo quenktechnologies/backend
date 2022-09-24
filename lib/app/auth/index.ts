@@ -116,14 +116,28 @@ export abstract class BaseAuthenticator<T extends Object> {
 }
 
 /**
- * AuthController provides a workflow for authenticating a user. It is designed
- * with the intention of serving an Single Page Application (SPA) but can be
- * used to authenticate a regular website as well.
+ * AuthController provides a workflow for requring authentication before a user
+ * accesses a protected resource.
+ *
+ * The resource is assumed to be the index of the site but can be any page 
+ * desired. When a user attempts to access this resource, an existing 
+ * authenticated session is checked for and implementor defined action is taken
+ * based on the result.
+ *
+ * This class provides route endpoints for a form based authentication workflow.
+ * It is designed with the intention of serving a Single Page Application (SPA) 
+ * but can be used to authenticate a regular website as well.
  *
  * The various on* methods here are each meant to serve a particular route in 
- * an application's authentication workflow.
+ * the authentication workflow.
  */
 export abstract class AuthController {
+
+    /**
+     * authenticator used to authenticate users on request.
+     */
+    abstract authenticator: Authenticator;
+
 
     /**
      * views holds the various views used for this workflow
@@ -146,24 +160,19 @@ export abstract class AuthController {
      * urls used when redirecting the user based on the authentication attempt
      * result
      */
-    abstract urls: {
+    urls = {
 
         /**
          * form is the URL to use when redirecting to the form.
          */
-        form: string,
+        form: '/login',
 
         /**
          * index is the URL to use when redirecting to the protected resource.
          */
-        index: string,
+        index: '/'
 
     }
-
-    /**
-     * authenticator used to authenticate users on request.
-     */
-    abstract authenticator: Authenticator;
 
     /**
      * userSessionKey is the session value to store the user data in.
@@ -177,17 +186,64 @@ export abstract class AuthController {
     authContextKey = 'auth';
 
     /**
-     * checkAuth produces a filter that can be included in a route to ensure
+     * ensureAuth produces a filter that can be included in a route to ensure
      * the user is authenticated before proceeding.
      *
      * @param isXHR - If true, responds with a status code only on failure,
      *                redirects to the auth form otherwise.
      */
-    checkAuth = (isXHR = false) => (req: Request): Action<void> => {
+    ensureAuth = (isXHR = false) => (req: Request): Action<void> => {
 
         if (req.session.exists(this.userSessionKey)) return next(req);
 
-        return isXHR ? unauthorized() : redirect(this.urls.form, 302);
+        return isXHR ? unauthorized() : this.redirect(this.urls.form, 302);
+
+    }
+
+    /**
+     * userDetected is called when a user visits the resource and is 
+     * already properly authenticated.
+     *
+     * By default it shows the protected resource.
+     */
+    userDetected(req: Request): Action<void> {
+
+        return this.show(this.views.index(req));
+
+    }
+
+    /**
+     * userNotDetected is called when a users visits the resource and is not
+     * authenticated.
+     *
+     * By default it redirects to the login form.
+     */
+    userNotDetected(_: Request): Action<void> {
+
+        return this.redirect(this.urls.form, 302);
+
+    }
+
+    /**
+     * userAuthenticated is called when the user has been successfully 
+     * authenticated.
+     *
+     * By default it redirects to the protected resource.
+     */
+    userAuthenticated(_: Request): Action<void> {
+
+        return this.redirect(this.urls.index, 302);
+
+    }
+
+    /**
+     * userUnAuthenticated is called when the user logs out.
+     *
+     * By default it redirects to the login form.
+     */
+    userUnAuthenticated(_: Request): Action<void> {
+
+        return this.redirect(this.urls.form, 302);
 
     }
 
@@ -207,11 +263,11 @@ export abstract class AuthController {
 
             if (muser.isJust()) {
 
-                return render(that.views.index(req));
+                return that.userDetected(req);
 
             } else {
 
-                return redirect(that.urls.form, 302);
+                return that.userNotDetected(req);
 
             }
 
@@ -227,7 +283,7 @@ export abstract class AuthController {
         let ctx = <AuthFailedContext>req.session.getOrElse(this.authContextKey,
             { failed: false, credentials: {} });
 
-        return render(this.views.form(req, ctx));
+        return this.show(this.views.form(req, ctx));
 
     }
 
@@ -248,13 +304,13 @@ export abstract class AuthController {
                 req.session.setWithDescriptor(that.authContextKey,
                     euser.takeLeft(), { ttl: 1 });
 
-                return redirect(that.urls.form, 303)
+                return that.redirect(that.urls.form, 303)
 
             }
 
             req.session.set(that.userSessionKey, euser.takeRight());
 
-            return redirect(that.urls.index, 302);
+            return that.userAuthenticated(req);
 
         });
 
@@ -265,7 +321,7 @@ export abstract class AuthController {
      *
      * This should be used on a POST route.
      */
-    onLogout(req: Request): Action<undefined> {
+    onLogout(req: Request): Action<void> {
 
         let that = this;
 
@@ -273,9 +329,27 @@ export abstract class AuthController {
 
             yield fork(req.session.destroy());
 
-            return redirect(that.urls.form, 302);
+            return that.userUnAuthenticated(req);
 
         });
+
+    }
+
+    /**
+     * show helper for rendering View content.
+     */
+    show(view: View, status: number = 200): Action<void> {
+
+        return render(view, status);
+
+    }
+
+    /**
+     * redirect helper for redirecting the user.
+     */
+    redirect(url: string, code: number = 302, abort = true): Action<void> {
+
+        return redirect(url, code, abort);
 
     }
 
