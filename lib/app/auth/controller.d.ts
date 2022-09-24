@@ -62,11 +62,12 @@ export declare abstract class AuthController {
     /**
      * ensureAuth produces a filter that can be included in a route to ensure
      * the user is authenticated before proceeding.
-     *
-     * @param isXHR - If true, responds with a status code only on failure,
-     *                redirects to the auth form otherwise.
      */
-    ensureAuth: (isXHR?: boolean) => (req: Request) => Action<void>;
+    ensureAuth: (req: Request) => Action<void>;
+    /**
+     * ensureAuthXHR is ensureAuth for XHR routes.
+     */
+    ensureAuthXHR: (req: Request) => Action<void>;
     /**
      * userDetected is called when a user visits the resource and is
      * already properly authenticated.

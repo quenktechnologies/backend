@@ -81,15 +81,23 @@ export abstract class AuthController {
     /**
      * ensureAuth produces a filter that can be included in a route to ensure
      * the user is authenticated before proceeding.
-     *
-     * @param isXHR - If true, responds with a status code only on failure,
-     *                redirects to the auth form otherwise.
      */
-    ensureAuth = (isXHR = false) => (req: Request): Action<void> => {
+    ensureAuth = (req: Request): Action<void> => {
 
         if (req.session.exists(this.userSessionKey)) return next(req);
 
-        return isXHR ? unauthorized() : this.redirect(this.urls.form, 302);
+        return this.redirect(this.urls.form, 302);
+
+    }
+
+    /**
+     * ensureAuthXHR is ensureAuth for XHR routes.
+     */
+    ensureAuthXHR =  (req: Request): Action<void> => {
+
+        if (req.session.exists(this.userSessionKey)) return next(req);
+
+        return unauthorized();
 
     }
 
