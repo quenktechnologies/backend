@@ -1,12 +1,14 @@
 {
   "name": "@quenk/server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Server side APIs and utils used by QT",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "files":["lib"],
+  "files": [
+    "lib"
+  ],
   "author": "Lasana Murray <info@quenk.com> (http://quenk.com/)",
   "license": "Apache-2.0",
   "dependencies": {
