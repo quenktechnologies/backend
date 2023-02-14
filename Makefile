@@ -1,5 +1,4 @@
 .DELETE_ON_ERROR:
-
 lib: $(shell find src -type f)
 	rm -R lib 2> /dev/null || true 
 	mkdir lib
