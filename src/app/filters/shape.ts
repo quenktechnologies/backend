@@ -164,51 +164,40 @@ export const expand = (ctx: ShapeContext, src: Shape): Object =>
         }
     });
 
-const doShape =
-    (req: Request, target: Shape): Action<void> =>
+/**
+ * @internal
+ */
+export const doShape =
+    (req: Request, method: string, shape: Shape, target: Path): Action<void> =>
         doAction(function*() {
+
+            if (req.method !== method) return next(req);
 
             let ctx = mkCtx(req);
 
-            req.body = merge(<Object>req.body || {}, expand(ctx, target));
+            let obj = <Object><object>req;
+
+            obj[target] = merge(<Object>obj[target] || {}, expand(ctx, shape));
 
             return next(req);
 
         })
 
 /**
+ * shapeGet merges an expanded Shape into the query section of a GET request.
+ */
+export const tagGet = (shape: Shape) => (req: Request): Action<void> =>
+    doShape(req, 'PATCH', shape, 'query');
+
+/**
  * shapePost merges an expanded Shape to the body of a POST request.
  */
-export const shapePost = (target: Shape) => (req: Request): Action<void> => {
-
-    if (req.method !== 'POST') return next(req);
-
-    return doShape(req, target);
-
-}
+export const shapePost = (shape: Shape) => (req: Request): Action<void> =>
+    doShape(req, 'POST', shape, 'body');
 
 /**
  * shapePatch merges an expanded Shape into the body of a PATCH request.
  */
-export const shapePatch = (target: Shape) => (req: Request): Action<void> => {
+export const shapePatch = (shape: Shape) => (req: Request): Action<void> =>
+    doShape(req, 'PATCH', shape, 'body');
 
-    if (req.method !== 'PATCH') return next(req);
-
-    return doShape(req, target);
-
-}
-
-/**
- * shapeGet merges an expanded Shape into the query section of a GET request.
- */
-export const tagGet = (target: Shape) => (req: Request): Action<void> => {
-
-    if (req.method !== 'GET') return next(req);
-
-    let ctx = mkCtx(req);
-
-    req.query = merge(<Object>req.query || {}, expand(ctx, target));
-
-    return next(req);
-
-}
