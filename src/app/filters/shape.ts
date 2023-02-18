@@ -12,9 +12,9 @@
  *
  * See them as the last step before sending data to the database.
  */
-import { Path, unsafeGet } from '@quenk/noni/lib/data/record/path';
-import { Object } from '@quenk/noni/lib/data/jsonx';
-import { Record, merge, map } from '@quenk/noni/lib/data/record';
+import { Path, set, unsafeGet } from '@quenk/noni/lib/data/record/path';
+import { Object, Value } from '@quenk/noni/lib/data/jsonx';
+import { Record, reduce } from '@quenk/noni/lib/data/record';
 
 import { Action, doAction } from '@quenk/tendril/lib/app/api';
 import { Request } from '@quenk/tendril/lib/app/api/request';
@@ -123,45 +123,40 @@ export interface Shape extends Record<Path | PropertyOptions> { }
 /**
  * expand a Shape to its final value using values from a context object.
  */
-export const expand = (ctx: ShapeContext, src: Shape): Object =>
-    <Object>map(src, (_, spec) => {
+export const expand = (ctx: object, src: Shape, dest: object): Object =>
+    reduce(src, <Object>dest, (ret, spec, destPath) => {
 
-        if (isObject(spec)) {
+        spec = isObject(spec) ? spec : { path: spec };
 
-            let { path, cast } = <PropertyOptions>spec;
+        let { path, cast } = <PropertyOptions>spec;
 
-            let val = unsafeGet(path, <Object><object>ctx);
+        let val = unsafeGet(path, <Object>ctx);
 
-            if (cast != null) {
+        if ((val != null) && cast != null) {
 
-                switch (cast) {
+            switch (cast) {
 
-                    case 'number':
-                        val = (val != null) ? Number(val) : 0;
-                        break;
+                case 'number':
+                    val = Number(val);
+                    break;
 
-                    case 'boolean':
-                        val = (val != null) ? Boolean(val) : false;
-                        break;
+                case 'boolean':
+                    val = Boolean(val);
+                    break;
 
-                    case 'string':
-                        val = (val != null) ? String(val) : '';
-                        break;
+                case 'string':
+                    val = (val != null) ? String(val) : '';
+                    break;
 
-                    default:
-                        break;
-
-                }
+                default:
+                    break;
 
             }
 
-            return val;
-
-        } else {
-
-            return spec;
-
         }
+
+        return val == null ? ret : set(destPath, <Value>val, ret);
+
     });
 
 /**
@@ -177,7 +172,7 @@ export const doShape =
 
             let obj = <Object><object>req;
 
-            obj[target] = merge(<Object>obj[target] || {}, expand(ctx, shape));
+            obj[target] = expand(ctx, shape, <object>obj[target]);
 
             return next(req);
 
@@ -186,8 +181,8 @@ export const doShape =
 /**
  * shapeGet merges an expanded Shape into the query section of a GET request.
  */
-export const tagGet = (shape: Shape) => (req: Request): Action<void> =>
-    doShape(req, 'PATCH', shape, 'query');
+export const shapeGet = (shape: Shape) => (req: Request): Action<void> =>
+    doShape(req, 'GET', shape, 'query');
 
 /**
  * shapePost merges an expanded Shape to the body of a POST request.
@@ -200,4 +195,3 @@ export const shapePost = (shape: Shape) => (req: Request): Action<void> =>
  */
 export const shapePatch = (shape: Shape) => (req: Request): Action<void> =>
     doShape(req, 'PATCH', shape, 'body');
-
