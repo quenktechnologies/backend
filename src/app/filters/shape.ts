@@ -21,7 +21,6 @@ import { Request } from '@quenk/tendril/lib/app/api/request';
 import { next } from '@quenk/tendril/lib/app/api/control';
 import { isObject } from '@quenk/noni/lib/data/type';
 import { SessionStorage } from '@quenk/tendril/lib/app/api/storage/session';
-import { PRSStorage } from '@quenk/tendril/lib/app/api/storage/prs';
 
 /**
  * ShapeContext provides common values that can be used to retrieve values to
@@ -61,9 +60,9 @@ export interface ShapeContext {
     $session: SessionStorage,
 
     /**
-     * $prs is the prs property of the Request object.
+     * $prs contains the data of the prs property of the Request object.
      */
-    $prs: PRSStorage,
+    $prs: Object,
 
     /**
      * $now is an instance of Date for the current time.
@@ -82,7 +81,7 @@ const mkCtx = (req: Request): ShapeContext => ({
     $params: req.params,
     $body: <Object>req.body,
     $query: req.query,
-    $prs: req.prs,
+    $prs: req.prs.data,
     $session: req.session || {},
     $now: new Date(),
     $env: process.env

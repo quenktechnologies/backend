@@ -2,7 +2,13 @@ import { assert } from '@quenk/test/lib/assert';
 
 import { ClientRequest } from '@quenk/tendril/lib/app/api/request';
 
-import { expand, shapeGet } from '../../../lib/app/filters/shape';
+import {
+    expand,
+    shapeGet,
+    shapePost,
+    shapePatch,
+    Shape
+} from '../../../lib/app/filters/shape';
 
 const ctx = {
     id: 1,
@@ -67,35 +73,149 @@ describe('shape', () => {
 
     describe('shapeGet', () => {
 
-        it('it should shape the request query', async () => {
-
-            let query = { name: '1', age: '1', status: 'active' };
-
-            let params = { name: '2', age: '2' };
-
-            let req = ClientRequest.fromPartialExpress({ params, query });
-
-            let shape = {
-                name: {
-                    path: '$params.name', cast: 'number'
+        it('it should shape the request query', () => {
+            doBodyTest('GET', {
+                request: {
+                    query: { name: '1', age: '1', status: 'active' },
+                    params: { name: '2', age: '2' }
                 },
-                age: '$params.age'
-            };
+                shape: {
+                    name: {
+                        path: '$params.name', cast: 'number'
+                    },
+                    age: '$params.age'
+                },
+                expected: {
+                    name: 2,
+                    age: '2',
+                    status: 'active'
+                }
+            })
+        })
 
-            let action = (shapeGet(shape)(req));
-
-            while (true) {
-                let result = action.resume();
-                if (result.isLeft()) break;
-            }
-
-            assert(req.query).equate({
-                name: 2,
-                age: '2',
-                status: 'active'
-            });
-
-        });
+        it('it should ignore other methods', () => {
+            doBodyTest('GET', {
+                request: {
+                    method: 'POST',
+                    query: { name: '1', age: '1', status: 'active' },
+                    params: { name: '2', age: '2' }
+                },
+                shape: {
+                    name: {
+                        path: '$params.name', cast: 'number'
+                    },
+                    age: '$params.age'
+                },
+                expected: { name: '1', age: '1', status: 'active' }
+            })
+        })
 
     });
+
+    describe('shapePost', () => {
+
+        it('it should shape the request body', () =>
+            doBodyTest('POST', {
+                request: {
+                    method: 'POST',
+                    body: { name: 'Luis', age: 12, gender: 'male' },
+                    params: { name: 'Lois', age: 21, gender: 'female' }
+                },
+                shape: {
+                    name: '$params.name',
+                    age: '$params.age',
+                    gender: '$params.gender'
+                },
+                expected: {
+                    name: 'Lois',
+                    age: 21,
+                    gender: 'female'
+                }
+            }));
+
+        it('it should ignore other methods', () =>
+            doBodyTest('POST', {
+                request: {
+                    method: 'PATCH',
+                    body: { name: 'Luis', age: 12, gender: 'male' },
+                    params: { name: 'Lois', age: 21, gender: 'female' }
+                },
+                shape: {
+                    name: '$params.name',
+                    age: '$params.age',
+                    gender: '$params.gender'
+                },
+                expected: {
+                    name: 'Luis',
+                    age: 12,
+                    gender: 'male'
+                }
+            }));
+    });
+
+    describe('shapePatch', () => {
+
+        it('it should shape the request body', () =>
+            doBodyTest('PATCH', {
+                request: {
+                    method: 'PATCH',
+                    body: { name: 'Luis', age: 12, gender: 'male' },
+                    params: { name: 'Lois', age: 21, gender: 'female' }
+                },
+                shape: {
+                    name: '$params.name',
+                    age: '$params.age',
+                    gender: '$params.gender'
+                },
+                expected: {
+                    name: 'Lois',
+                    age: 21,
+                    gender: 'female'
+                }
+            }));
+
+        it('it should ignore other methods', () =>
+            doBodyTest('PATCH', {
+                request: {
+                    method: 'POST',
+                    body: { name: 'Luis', age: 12, gender: 'male' },
+                    params: { name: 'Lois', age: 21, gender: 'female' }
+                },
+                shape: {
+                    name: '$params.name',
+                    age: '$params.age',
+                    gender: '$params.gender'
+                },
+                expected: {
+                    name: 'Luis',
+                    age: 12,
+                    gender: 'male'
+                }
+            }));
+    })
+
 });
+
+interface BodyTest {
+
+    request: object,
+
+    shape: Shape,
+
+    expected: object
+
+}
+
+const doBodyTest = (method: string, { request, shape, expected }: BodyTest) => {
+
+    let req = ClientRequest.fromPartialExpress(request);
+
+    let action =
+        (method === 'GET' ? shapeGet :
+            (method === 'POST' ? shapePost : shapePatch))(shape)(req);
+
+    while (action.resume().isRight()) { }
+
+    assert(method === 'GET' ? req.query : req.body).equate(expected);
+
+}
