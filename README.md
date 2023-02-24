@@ -1,6 +1,8 @@
 Server
 =====
 
+[![Test](https://github.com/quenktechnologies/server/actions/workflows/test.yml/badge.svg)](https://github.com/quenktechnologies/server/actions/workflows/test.yml)
+
 # Introduction
 This package is a collection of APIs and utils commonly used by Quenk 
 Technologies when building Node.js based server applications.
