@@ -5,7 +5,8 @@ on:
       - '*'
 
 jobs:
-  release:
-    - uses: quenktechnologies/.github/.github/workflows/node-eslint.yml@master
-    - uses: quenktechnologies/.github/.github/workflows/node-publish.yml@master
-      secrets: inherit
+  lint:
+    uses: quenktechnologies/.github/.github/workflows/node-eslint.yml@master
+  release:    
+    uses: quenktechnologies/.github/.github/workflows/node-publish.yml@master
+    secrets: inherit
