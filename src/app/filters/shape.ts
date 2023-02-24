@@ -15,12 +15,11 @@
 import { Path, set, unsafeGet } from '@quenk/noni/lib/data/record/path';
 import { Object, Value } from '@quenk/noni/lib/data/jsonx';
 import { Record, reduce } from '@quenk/noni/lib/data/record';
+import { isObject } from '@quenk/noni/lib/data/type';
 
 import { Action, doAction } from '@quenk/tendril/lib/app/api';
 import { Request } from '@quenk/tendril/lib/app/api/request';
 import { next } from '@quenk/tendril/lib/app/api/control';
-import { isObject } from '@quenk/noni/lib/data/type';
-import { SessionStorage } from '@quenk/tendril/lib/app/api/storage/session';
 
 /**
  * ShapeContext provides common values that can be used to retrieve values to
@@ -53,11 +52,12 @@ export interface ShapeContext {
     $body: Object,
 
     /**
-     * $session is the session property of the Request object.
+     * $session is the session data from the session property of the Request
+     * object.
      *
      * If no session support is detected, an empty object is provided.
      */
-    $session: SessionStorage,
+    $session: Object,
 
     /**
      * $prs contains the data of the prs property of the Request object.
@@ -82,7 +82,7 @@ const mkCtx = (req: Request): ShapeContext => ({
     $body: <Object>req.body,
     $query: req.query,
     $prs: req.prs.data,
-    $session: req.session || {},
+    $session: req.session.getAll(),
     $now: new Date(),
     $env: process.env
 })
@@ -164,7 +164,6 @@ export const expand = (ctx: object, src: Shape, dest: object): Object =>
 export const doShape =
     (req: Request, method: string, shape: Shape, target: Path): Action<void> =>
         doAction(function*() {
-
             if (req.method !== method) return next(req);
 
             let ctx = mkCtx(req);

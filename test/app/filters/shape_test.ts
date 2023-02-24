@@ -110,6 +110,47 @@ describe('shape', () => {
             })
         })
 
+        it('should retrieve the specified properties', () => {
+
+            process.env.port = '80';
+
+            doContextTest('GET', {
+                request: {
+                    url: 'test.tld',
+                    params: { id: '1' },
+                    query: { q: { x: '1', y: '2' }, sort: '-name' },
+                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                },
+
+                shape: {
+                    url: '$request.url',
+                    params: { path: '$params.id', cast: 'number' },
+                    queryx: '$query.q.x',
+                    querySort: '$query.sort',
+                    prs: '$prs.parsed',
+                    prsn: '$prs.$in[2]',
+                    session: '$session.name',
+                    port: '$env.port'
+                },
+
+                expected: {
+                    url: 'test.tld',
+                    params: 1,
+                    q: { x: '1', y: '2' },
+                    sort: '-name',
+                    queryx: '1',
+                    querySort: '-name',
+                    prs: true,
+                    prsn: 3,
+                    session: 'test',
+                    port: '80'
+                }
+
+            });
+
+        });
+
     });
 
     describe('shapePost', () => {
@@ -151,6 +192,47 @@ describe('shape', () => {
                     gender: 'male'
                 }
             }));
+
+        it('should retrieve the specified values', () => {
+
+            process.env.port = '80';
+
+            doContextTest('POST', {
+                request: {
+                    url: 'test.tld',
+                    method: 'POST',
+                    params: { id: '1' },
+                    body: { q: { x: '1', y: '2' }, sort: '-name' },
+                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                },
+
+                shape: {
+                    url: '$request.url',
+                    params: { path: '$params.id', cast: 'number' },
+                    queryx: '$body.q.x',
+                    querySort: '$body.sort',
+                    prs: '$prs.parsed',
+                    prsn: '$prs.$in[2]',
+                    session: '$session.name',
+                    port: '$env.port'
+                },
+
+                expected: {
+                    url: 'test.tld',
+                    params: 1,
+                    q: { x: '1', y: '2' },
+                    sort: '-name',
+                    queryx: '1',
+                    querySort: '-name',
+                    prs: true,
+                    prsn: 3,
+                    session: 'test',
+                    port: '80'
+                }
+
+            });
+        });
     });
 
     describe('shapePatch', () => {
@@ -192,8 +274,48 @@ describe('shape', () => {
                     gender: 'male'
                 }
             }));
-    })
 
+        it('should retrieve the specified values', () => {
+
+            process.env.port = '80';
+
+            doContextTest('PATCH', {
+                request: {
+                    url: 'test.tld',
+                    method: 'PATCH',
+                    params: { id: '1' },
+                    body: { q: { x: '1', y: '2' }, sort: '-name' },
+                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                },
+
+                shape: {
+                    url: '$request.url',
+                    params: { path: '$params.id', cast: 'number' },
+                    queryx: '$body.q.x',
+                    querySort: '$body.sort',
+                    prs: '$prs.parsed',
+                    prsn: '$prs.$in[2]',
+                    session: '$session.name',
+                    port: '$env.port'
+                },
+
+                expected: {
+                    url: 'test.tld',
+                    params: 1,
+                    q: { x: '1', y: '2' },
+                    sort: '-name',
+                    queryx: '1',
+                    querySort: '-name',
+                    prs: true,
+                    prsn: 3,
+                    session: 'test',
+                    port: '80'
+                }
+
+            });
+        })
+    })
 });
 
 interface BodyTest {
@@ -208,7 +330,7 @@ interface BodyTest {
 
 const doBodyTest = (method: string, { request, shape, expected }: BodyTest) => {
 
-    let req = ClientRequest.fromPartialExpress(request);
+    let req = ClientRequest.fromPartial(request);
 
     let action =
         (method === 'GET' ? shapeGet :
@@ -219,3 +341,18 @@ const doBodyTest = (method: string, { request, shape, expected }: BodyTest) => {
     assert(method === 'GET' ? req.query : req.body).equate(expected);
 
 }
+
+const doContextTest =
+    (method: string, { request, shape, expected }: BodyTest) => {
+
+        let req = ClientRequest.fromPartial(request);
+
+        let action =
+            (method === 'GET' ? shapeGet :
+                (method === 'POST' ? shapePost : shapePatch))(shape)(req);
+
+        while (action.resume().isRight()) { }
+
+        assert(method === 'GET' ? req.query : req.body).equate(expected);
+
+    }
