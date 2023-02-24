@@ -9,9 +9,5 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-    automerge:
-      enabled: true
-      require_approvals: true
-      require_passing_tests: true
-      commit_message:
-        prefix: "build:"
+    commit_message:
+      prefix: "build"
