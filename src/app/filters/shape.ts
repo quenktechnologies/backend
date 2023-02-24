@@ -7,7 +7,7 @@
  *
  * This module helps with the former by providing filters that evaluate a
  * declared "shape" upon request, and merge it into the target request property
- * (body or query). These filters should only be invoked after the entire 
+ * (body or query). These filters should only be invoked after the entire
  * request was been properly validated and transformed to suite your needs.
  *
  * See them as the last step before sending data to the database.
@@ -25,31 +25,30 @@ import { next } from '@quenk/tendril/lib/app/api/control';
  * ShapeContext provides common values that can be used to retrieve values to
  * shape a mutable property on a Request.
  *
- * Each property in the context begins with a '$' and most are properties of 
+ * Each property in the context begins with a '$' and most are properties of
  * Request themselves.
  */
 export interface ShapeContext {
-
     /**
-     * $request is the current incoming Request object that the context is 
+     * $request is the current incoming Request object that the context is
      * created to handle.
      */
-    $request: Request,
+    $request: Request;
 
     /**
      * $params is the params property of the Request object.
      */
-    $params: Record<string>,
+    $params: Record<string>;
 
     /**
      * $query is the query property of the Request object/
      */
-    $query: Object,
+    $query: Object;
 
     /**
      * $body is the body property of the Request object.
      */
-    $body: Object,
+    $body: Object;
 
     /**
      * $session is the session data from the session property of the Request
@@ -57,23 +56,22 @@ export interface ShapeContext {
      *
      * If no session support is detected, an empty object is provided.
      */
-    $session: Object,
+    $session: Object;
 
     /**
      * $prs contains the data of the prs property of the Request object.
      */
-    $prs: Object,
+    $prs: Object;
 
     /**
      * $now is an instance of Date for the current time.
      */
-    $now: Date,
+    $now: Date;
 
     /**
      * $env is the process.env object.
      */
-    $env: NodeJS.ProcessEnv
-
+    $env: NodeJS.ProcessEnv;
 }
 
 const mkCtx = (req: Request): ShapeContext => ({
@@ -85,7 +83,7 @@ const mkCtx = (req: Request): ShapeContext => ({
     $session: req.session.getAll(),
     $now: new Date(),
     $env: process.env
-})
+});
 
 /**
  * CastType indicates how to cast the value of a Shape property.
@@ -99,17 +97,15 @@ export type CastType = string;
  * PropertyOptions can be specified to modify how path values are resolved.
  */
 export interface PropertyOptions {
-
     /**
      * path to the value in the context.
      */
-    path: Path
+    path: Path;
 
     /**
      * cast indicates what type to cast the value to.
      */
-    cast?: CastType
-
+    cast?: CastType;
 }
 
 /**
@@ -117,24 +113,21 @@ export interface PropertyOptions {
  * expression that will be used to tag a target object with its context resolved
  * value.
  */
-export interface Shape extends Record<Path | PropertyOptions> { }
+export type Shape = Record<Path | PropertyOptions>;
 
 /**
  * expand a Shape to its final value using values from a context object.
  */
 export const expand = (ctx: object, src: Shape, dest: object): Object =>
     reduce(src, <Object>dest, (ret, spec, destPath) => {
-
         spec = isObject(spec) ? spec : { path: spec };
 
-        let { path, cast } = <PropertyOptions>spec;
+        const { path, cast } = <PropertyOptions>spec;
 
         let val = unsafeGet(path, <Object>ctx);
 
-        if ((val != null) && cast != null) {
-
+        if (val != null && cast != null) {
             switch (cast) {
-
                 case 'number':
                     val = Number(val);
                     break;
@@ -144,52 +137,58 @@ export const expand = (ctx: object, src: Shape, dest: object): Object =>
                     break;
 
                 case 'string':
-                    val = (val != null) ? String(val) : '';
+                    val = val != null ? String(val) : '';
                     break;
 
                 default:
                     break;
-
             }
-
         }
 
         return val == null ? ret : set(destPath, <Value>val, ret);
-
     });
 
 /**
  * @internal
  */
-export const doShape =
-    (req: Request, method: string, shape: Shape, target: Path): Action<void> =>
-        doAction(function*() {
-            if (req.method !== method) return next(req);
+export const doShape = (
+    req: Request,
+    method: string,
+    shape: Shape,
+    target: Path
+): Action<void> =>
+    doAction(function* () {
+        if (req.method !== method) return next(req);
 
-            let ctx = mkCtx(req);
+        const ctx = mkCtx(req);
 
-            let obj = <Object><object>req;
+        const obj = <Object>(<object>req);
 
-            obj[target] = expand(ctx, shape, <object>obj[target]);
+        obj[target] = expand(ctx, shape, <object>obj[target]);
 
-            return next(req);
-
-        })
+        return next(req);
+    });
 
 /**
  * shapeGet merges an expanded Shape into the query section of a GET request.
  */
-export const shapeGet = (shape: Shape) => (req: Request): Action<void> =>
-    doShape(req, 'GET', shape, 'query');
+export const shapeGet =
+    (shape: Shape) =>
+    (req: Request): Action<void> =>
+        doShape(req, 'GET', shape, 'query');
 
 /**
  * shapePost merges an expanded Shape to the body of a POST request.
  */
-export const shapePost = (shape: Shape) => (req: Request): Action<void> =>
-    doShape(req, 'POST', shape, 'body');
+export const shapePost =
+    (shape: Shape) =>
+    (req: Request): Action<void> =>
+        doShape(req, 'POST', shape, 'body');
 
 /**
  * shapePatch merges an expanded Shape into the body of a PATCH request.
  */
-export const shapePatch = (shape: Shape) => (req: Request): Action<void> =>
-    doShape(req, 'PATCH', shape, 'body');
+export const shapePatch =
+    (shape: Shape) =>
+    (req: Request): Action<void> =>
+        doShape(req, 'PATCH', shape, 'body');

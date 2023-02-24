@@ -12,49 +12,44 @@ import { Authenticator, AuthFailedContext } from './authenticator';
  * AuthController provides a workflow for requring authentication before a user
  * accesses a protected resource.
  *
- * The resource is assumed to be the index of the site but can be any page 
- * desired. When a user attempts to access this resource, an existing 
+ * The resource is assumed to be the index of the site but can be any page
+ * desired. When a user attempts to access this resource, an existing
  * authenticated session is checked for and implementor defined action is taken
  * based on the result.
  *
  * This class provides route endpoints for a form based authentication workflow.
- * It is designed with the intention of serving a Single Page Application (SPA) 
+ * It is designed with the intention of serving a Single Page Application (SPA)
  * but can be used to authenticate a regular website as well.
  *
- * The various on* methods here are each meant to serve a particular route in 
+ * The various on* methods here are each meant to serve a particular route in
  * the authentication workflow.
  */
 export abstract class AuthController {
-
     /**
      * authenticator used to authenticate users on request.
      */
     abstract authenticator: Authenticator;
 
-
     /**
      * views holds the various views used for this workflow
      */
     abstract views: {
-
         /**
          * index is the view to render when authentication is successful.
          */
-        index: (req: Request) => View,
+        index: (req: Request) => View;
 
         /**
          * form is the view to render to display the login form.
          */
-        form: (req: Request, ctx: AuthFailedContext) => View
-
-    }
+        form: (req: Request, ctx: AuthFailedContext) => View;
+    };
 
     /**
      * urls used when redirecting the user based on the authentication attempt
      * result
      */
     urls = {
-
         /**
          * form is the URL to use when redirecting to the form.
          */
@@ -64,8 +59,7 @@ export abstract class AuthController {
          * index is the URL to use when redirecting to the protected resource.
          */
         index: '/'
-
-    }
+    };
 
     /**
      * userSessionKey is the session value to store the user data in.
@@ -83,34 +77,28 @@ export abstract class AuthController {
      * the user is authenticated before proceeding.
      */
     ensureAuth = (req: Request): Action<void> => {
-
         if (req.session.exists(this.userSessionKey)) return next(req);
 
         return this.redirect(this.urls.form, 302);
-
-    }
+    };
 
     /**
      * ensureAuthXHR is ensureAuth for XHR routes.
      */
-    ensureAuthXHR =  (req: Request): Action<void> => {
-
+    ensureAuthXHR = (req: Request): Action<void> => {
         if (req.session.exists(this.userSessionKey)) return next(req);
 
         return unauthorized();
-
-    }
+    };
 
     /**
-     * userDetected is called when a user visits the resource and is 
+     * userDetected is called when a user visits the resource and is
      * already properly authenticated.
      *
      * By default it shows the protected resource.
      */
     userDetected(req: Request): Action<void> {
-
         return this.show(this.views.index(req));
-
     }
 
     /**
@@ -120,21 +108,17 @@ export abstract class AuthController {
      * By default it redirects to the login form.
      */
     userNotDetected(_: Request): Action<void> {
-
         return this.redirect(this.urls.form, 302);
-
     }
 
     /**
-     * userAuthenticated is called when the user has been successfully 
+     * userAuthenticated is called when the user has been successfully
      * authenticated.
      *
      * By default it redirects to the protected resource.
      */
     userAuthenticated(_: Request): Action<void> {
-
         return this.redirect(this.urls.index, 302);
-
     }
 
     /**
@@ -143,78 +127,70 @@ export abstract class AuthController {
      * By default it redirects to the login form.
      */
     userUnAuthenticated(_: Request): Action<void> {
-
         return this.redirect(this.urls.form, 302);
-
     }
 
     /**
-     * onIndex displays the index page of the application if the user is 
+     * onIndex displays the index page of the application if the user is
      * properly authenticated.
      *
      * If not, the user will be redirected to the login page.
      */
     onIndex(req: Request): Action<void> {
+        const that = this;
 
-        let that = this;
-
-        return doAction(function*() {
-
-            let muser = req.session.get(that.userSessionKey);
+        return doAction(function* () {
+            const muser = req.session.get(that.userSessionKey);
 
             if (muser.isJust()) {
-
                 return that.userDetected(req);
-
             } else {
-
                 return that.userNotDetected(req);
-
             }
-
         });
-
     }
 
     /**
      * onAuthForm renders the form for authentication.
      */
     onAuthForm(req: Request): Action<void> {
-
-        let ctx = <AuthFailedContext>req.session.getOrElse(this.authContextKey,
-            { failed: false, credentials: {} });
+        const ctx = <AuthFailedContext>req.session.getOrElse(
+            this.authContextKey,
+            {
+                failed: false,
+                credentials: {}
+            }
+        );
 
         return this.show(this.views.form(req, ctx));
-
     }
 
     /**
-     * onAuthenticate handles the authentication (POST) request sent by the 
+     * onAuthenticate handles the authentication (POST) request sent by the
      * user to authenticate.
      */
     onAuthenticate(req: Request): Action<void> {
+        const that = this;
 
-        let that = this;
-
-        return doAction(function*() {
-
-            let euser = yield fork(that.authenticator.authenticate(req));
+        return doAction(function* () {
+            const euser = yield fork(that.authenticator.authenticate(req));
 
             if (euser.isLeft()) {
+                req.session.setWithDescriptor(
+                    that.authContextKey,
+                    euser.takeLeft(),
+                    {
+                        ttl: 1
+                    }
+                );
 
-                req.session.setWithDescriptor(that.authContextKey,
-                    euser.takeLeft(), { ttl: 1 });
-
-                return that.redirect(that.urls.form, 303)
-
+                return that.redirect(that.urls.form, 303);
             }
 
             req.session.set(that.userSessionKey, euser.takeRight());
 
             return that.userAuthenticated(req);
-
         });
-
     }
 
     /**
@@ -223,35 +199,26 @@ export abstract class AuthController {
      * This should be used on a POST route.
      */
     onLogout(req: Request): Action<void> {
+        const that = this;
 
-        let that = this;
-
-        return doAction(function*() {
-
+        return doAction(function* () {
             yield fork(req.session.destroy());
 
             return that.userUnAuthenticated(req);
-
         });
-
     }
 
     /**
      * show helper for rendering View content.
      */
-    show(view: View, status: number = 200): Action<void> {
-
+    show(view: View, status = 200): Action<void> {
         return render(view, status);
-
     }
 
     /**
      * redirect helper for redirecting the user.
      */
-    redirect(url: string, code: number = 302, abort = true): Action<void> {
-
+    redirect(url: string, code = 302, abort = true): Action<void> {
         return redirect(url, code, abort);
-
     }
-
 }

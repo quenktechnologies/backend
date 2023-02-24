@@ -16,21 +16,19 @@ import { Request } from '@quenk/tendril/lib/app/api/request';
 export type AuthResult = Either<AuthFailedContext, UserData>;
 
 /**
- * AuthFailedContext can be merged into the context of the form view when 
+ * AuthFailedContext can be merged into the context of the form view when
  * authentication fails to give a description of the failure
  */
 export interface AuthFailedContext extends Object {
-
     /**
      * failed flag indicating failure.
      */
-    failed: boolean,
+    failed: boolean;
 
     /**
      * credentials (raw) received from the user.
      */
-    credentials: Object
-
+    credentials: Object;
 }
 
 /**
@@ -40,19 +38,17 @@ export interface AuthFailedContext extends Object {
 export type UserData = Object;
 
 /**
- * Authenticator is an object that knows how to determine whether an 
+ * Authenticator is an object that knows how to determine whether an
  * authentication request is valid or not.
  *
- * The details of how to actually do that are left entirely up to implementers 
+ * The details of how to actually do that are left entirely up to implementers
  * with the return value representing whether the attempt was successful or not.
  */
 export interface Authenticator {
-
     /**
      * authenticate the user's Request.
      */
-    authenticate(req: Request): Future<AuthResult>
-
+    authenticate(req: Request): Future<AuthResult>;
 }
 
 /**
@@ -60,7 +56,6 @@ export interface Authenticator {
  * extended by implementers.
  */
 export abstract class BaseAuthenticator<T extends Object> {
-
     /**
      * validate the authentication request before attempting authentication.
      *
@@ -80,26 +75,28 @@ export abstract class BaseAuthenticator<T extends Object> {
     abstract getUser(credentials: Object): Future<Maybe<T>>;
 
     authenticate(req: Request): Future<AuthResult> {
+        const that = this;
 
-        let that = this;
-
-        return doFuture(function*() {
-
-            let elogin = that.validate(req.body);
+        return doFuture(function* () {
+            const elogin = that.validate(req.body);
 
             if (elogin.isLeft())
-                return pure(<AuthResult>left({
-                    failed: true, credentials: req.body
-                }));
+                return pure(
+                    <AuthResult>left({
+                        failed: true,
+                        credentials: req.body
+                    })
+                );
 
-            let muser = yield that.getUser(<Object>elogin.takeRight());
+            const muser = yield that.getUser(<Object>elogin.takeRight());
 
-            return pure(<AuthResult>(muser.isNothing() ?
-                left({ failed: true, credentials: req.body }) :
-                right(muser.get())));
-
+            return pure(
+                <AuthResult>(
+                    (muser.isNothing()
+                        ? left({ failed: true, credentials: req.body })
+                        : right(muser.get()))
+                )
+            );
         });
-
     }
-
 }
