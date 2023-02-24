@@ -1,6 +1,6 @@
 {
   "name": "@quenk/server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Server side APIs and utils used by QT",
   "main": "index.js",
   "scripts": {
