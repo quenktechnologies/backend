@@ -1,7 +1,6 @@
 Quenk Backend
 =====
-
-[![Test](https://github.com/quenktechnologies/backend/actions/workflows/test.yml/badge.svg)](https://github.com/quenktechnologies/backend/actions/workflows/test.yml)
+[![Build](https://github.com/quenktechnologies/backend/actions/workflows/ci.yml/badge.svg)](https://github.com/quenktechnologies/backend/actions/workflows/ci.yml)
 
 # Introduction
 
