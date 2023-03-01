@@ -339,6 +339,7 @@ const doBodyTest = (method: string, { request, shape, expected }: BodyTest) => {
         method === 'GET' ? shapeGet : method === 'POST' ? shapePost : shapePatch
     )(shape)(req);
 
+    /* eslint-disable no-empty */
     while (action.resume().isRight()) {}
 
     assert(method === 'GET' ? req.query : req.body).equate(expected);
@@ -354,6 +355,7 @@ const doContextTest = (
         method === 'GET' ? shapeGet : method === 'POST' ? shapePost : shapePatch
     )(shape)(req);
 
+    /* eslint-disable no-empty */
     while (action.resume().isRight()) {}
 
     assert(method === 'GET' ? req.query : req.body).equate(expected);

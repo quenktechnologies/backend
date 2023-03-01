@@ -22,7 +22,7 @@ describe('Testkit', () => {
                 doFuture(function* () {
                     process.env.MONGO_URL = 'mongodb://localhost/fooman';
 
-                    let lkit = new Testkit({ url: <any>null });
+                    let lkit = new Testkit({ url: '' });
 
                     yield lkit.setUp();
 
