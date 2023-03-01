@@ -17,5 +17,6 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': 'off',
         'no-unused-vars': 'off',
         'require-yield': 'off',
+        'prefer-const': 'off'
     }
 };
