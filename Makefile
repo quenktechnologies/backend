@@ -7,8 +7,8 @@ lib: $(shell find src -type f)
 
 .PHONY: format
 format:
-	./node_modules/.bin/prettier --write src/**/*.{ts,js,json} $(ARGS)
+	./node_modules/.bin/prettier --write {src,test}/**/*.{ts,js,json} $(ARGS)
 
 .PHONY: lint
 lint:
-	./node_modules/.bin/eslint src/**/*.{ts,js} $(ARGS)
+	./node_modules/.bin/eslint {src,test}/**/*.{ts,js}  $(ARGS)

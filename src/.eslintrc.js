@@ -10,6 +10,7 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:prettier/recommended'
     ],
+    ignorePatterns: ['.eslintrc.js'],
     plugins: ['@typescript-eslint', 'prettier'],
     rules: {
         '@typescript-eslint/ban-types': 'off',
