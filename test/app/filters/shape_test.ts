@@ -18,14 +18,11 @@ const ctx = {
     randomString: 'xyz',
     undef: undefined,
     nullish: null
-}
+};
 
 describe('shape', () => {
-
     describe('expand', () => {
-
         it('should expand properties', () => {
-
             let input = {
                 id: 'id',
                 name: 'name.first',
@@ -33,46 +30,51 @@ describe('shape', () => {
                 'tokens.oauth.google': 'randomString'
             };
 
-            assert(expand(ctx, input, {}))
-                .equate({
-                    id: 1,
-                    name: 'Lasana',
-                    status: 'enabled',
-                    tokens: { oauth: { google: 'xyz' } }
-                })
-
+            assert(expand(ctx, input, {})).equate({
+                id: 1,
+                name: 'Lasana',
+                status: 'enabled',
+                tokens: { oauth: { google: 'xyz' } }
+            });
         });
 
         it('should omit null, undefined or missing values', () => {
-
-            assert(expand(ctx, {
-                id: 'nullish',
-                name: 'undefined',
-                status: '?',
-                token: 'randomString'
-            }, {})).equate({ token: 'xyz' })
-
+            assert(
+                expand(
+                    ctx,
+                    {
+                        id: 'nullish',
+                        name: 'undefined',
+                        status: '?',
+                        token: 'randomString'
+                    },
+                    {}
+                )
+            ).equate({ token: 'xyz' });
         });
 
         it('should cast to supported types', () => {
-
-            assert(expand(ctx, {
-                id: { path: 'id', cast: 'string' },
-                active: { path: 'trueString', cast: 'boolean' },
-                status: { path: '$lists.tags[1]' },
-                'created_by.id': { path: 'id', cast: 'number' }
-            }, {})).equate({
+            assert(
+                expand(
+                    ctx,
+                    {
+                        id: { path: 'id', cast: 'string' },
+                        active: { path: 'trueString', cast: 'boolean' },
+                        status: { path: '$lists.tags[1]' },
+                        'created_by.id': { path: 'id', cast: 'number' }
+                    },
+                    {}
+                )
+            ).equate({
                 id: '1',
                 active: true,
                 status: 'enabled',
                 created_by: { id: 1 }
-            })
-
+            });
         });
     });
 
     describe('shapeGet', () => {
-
         it('it should shape the request query', () => {
             doBodyTest('GET', {
                 request: {
@@ -81,7 +83,8 @@ describe('shape', () => {
                 },
                 shape: {
                     name: {
-                        path: '$params.name', cast: 'number'
+                        path: '$params.name',
+                        cast: 'number'
                     },
                     age: '$params.age'
                 },
@@ -90,8 +93,8 @@ describe('shape', () => {
                     age: '2',
                     status: 'active'
                 }
-            })
-        })
+            });
+        });
 
         it('it should ignore other methods', () => {
             doBodyTest('GET', {
@@ -102,16 +105,16 @@ describe('shape', () => {
                 },
                 shape: {
                     name: {
-                        path: '$params.name', cast: 'number'
+                        path: '$params.name',
+                        cast: 'number'
                     },
                     age: '$params.age'
                 },
                 expected: { name: '1', age: '1', status: 'active' }
-            })
-        })
+            });
+        });
 
         it('should retrieve the specified properties', () => {
-
             process.env.port = '80';
 
             doContextTest('GET', {
@@ -119,8 +122,12 @@ describe('shape', () => {
                     url: 'test.tld',
                     params: { id: '1' },
                     query: { q: { x: '1', y: '2' }, sort: '-name' },
-                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
-                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                    prsData: {
+                        parsed: true,
+                        limit: '10',
+                        $in: [1, 2, 3, 4, 5]
+                    },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] }
                 },
 
                 shape: {
@@ -146,15 +153,11 @@ describe('shape', () => {
                     session: 'test',
                     port: '80'
                 }
-
             });
-
         });
-
     });
 
     describe('shapePost', () => {
-
         it('it should shape the request body', () =>
             doBodyTest('POST', {
                 request: {
@@ -194,7 +197,6 @@ describe('shape', () => {
             }));
 
         it('should retrieve the specified values', () => {
-
             process.env.port = '80';
 
             doContextTest('POST', {
@@ -203,8 +205,12 @@ describe('shape', () => {
                     method: 'POST',
                     params: { id: '1' },
                     body: { q: { x: '1', y: '2' }, sort: '-name' },
-                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
-                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                    prsData: {
+                        parsed: true,
+                        limit: '10',
+                        $in: [1, 2, 3, 4, 5]
+                    },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] }
                 },
 
                 shape: {
@@ -230,13 +236,11 @@ describe('shape', () => {
                     session: 'test',
                     port: '80'
                 }
-
             });
         });
     });
 
     describe('shapePatch', () => {
-
         it('it should shape the request body', () =>
             doBodyTest('PATCH', {
                 request: {
@@ -276,7 +280,6 @@ describe('shape', () => {
             }));
 
         it('should retrieve the specified values', () => {
-
             process.env.port = '80';
 
             doContextTest('PATCH', {
@@ -285,8 +288,12 @@ describe('shape', () => {
                     method: 'PATCH',
                     params: { id: '1' },
                     body: { q: { x: '1', y: '2' }, sort: '-name' },
-                    prsData: { parsed: true, limit: '10', $in: [1, 2, 3, 4, 5] },
-                    sessionData: { user: 1, name: 'test', tags: ['active'] },
+                    prsData: {
+                        parsed: true,
+                        limit: '10',
+                        $in: [1, 2, 3, 4, 5]
+                    },
+                    sessionData: { user: 1, name: 'test', tags: ['active'] }
                 },
 
                 shape: {
@@ -312,47 +319,42 @@ describe('shape', () => {
                     session: 'test',
                     port: '80'
                 }
-
             });
-        })
-    })
+        });
+    });
 });
 
 interface BodyTest {
+    request: object;
 
-    request: object,
+    shape: Shape;
 
-    shape: Shape,
-
-    expected: object
-
+    expected: object;
 }
 
 const doBodyTest = (method: string, { request, shape, expected }: BodyTest) => {
-
     let req = ClientRequest.fromPartial(request);
 
-    let action =
-        (method === 'GET' ? shapeGet :
-            (method === 'POST' ? shapePost : shapePatch))(shape)(req);
+    let action = (
+        method === 'GET' ? shapeGet : method === 'POST' ? shapePost : shapePatch
+    )(shape)(req);
 
-    while (action.resume().isRight()) { }
+    while (action.resume().isRight()) {}
 
     assert(method === 'GET' ? req.query : req.body).equate(expected);
+};
 
-}
+const doContextTest = (
+    method: string,
+    { request, shape, expected }: BodyTest
+) => {
+    let req = ClientRequest.fromPartial(request);
 
-const doContextTest =
-    (method: string, { request, shape, expected }: BodyTest) => {
+    let action = (
+        method === 'GET' ? shapeGet : method === 'POST' ? shapePost : shapePatch
+    )(shape)(req);
 
-        let req = ClientRequest.fromPartial(request);
+    while (action.resume().isRight()) {}
 
-        let action =
-            (method === 'GET' ? shapeGet :
-                (method === 'POST' ? shapePost : shapePatch))(shape)(req);
-
-        while (action.resume().isRight()) { }
-
-        assert(method === 'GET' ? req.query : req.body).equate(expected);
-
-    }
+    assert(method === 'GET' ? req.query : req.body).equate(expected);
+};
