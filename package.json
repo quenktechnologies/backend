@@ -12,11 +12,13 @@
   "author": "Lasana Murray <info@quenk.com> (http://quenk.com/)",
   "license": "Apache-2.0",
   "dependencies": {
-    "@quenk/noni": "^1.43.5",
+    "@quenk/noni": "^1.46.1",
+    "@quenk/noni-mongodb": "^1.0.0",
     "@quenk/preconditions": "^5.6.0",
     "@quenk/tendril": "^0.43.11",
     "@quenk/wml": "^2.13.1",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "mongodb": "^5.1.0"
   },
   "devDependencies": {
     "@quenk/test": "^2.5.0",
