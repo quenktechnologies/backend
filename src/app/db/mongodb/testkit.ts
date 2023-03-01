@@ -13,7 +13,6 @@ import {
 import { Type } from '@quenk/noni/lib/data/type';
 
 const defaultConfig = {
-
     url: 'mongodb://localhost/testkittest',
 
     collectionNames: [],
@@ -21,46 +20,42 @@ const defaultConfig = {
     removeAllCollections: false,
 
     dropDatabase: false
-
 };
 
 /**
  * Configuration for Testkit instances.
  */
 export interface Configuration {
-
     /**
      * url to use to connect the client.
      *
      * The environment variable MONGO_URL is used if this is not specified.
      */
-    url: string,
+    url: string;
 
     /**
-     * collectionNames is an array of collection names that can be configured to 
+     * collectionNames is an array of collection names that can be configured to
      * automically remove after each test.
      */
-    collectionNames: string[],
+    collectionNames: string[];
 
     /**
      * removeAlLCollections if true, removes all collections after each test
      * instead of the ones in collectionNames.
      */
-    removeAllCollections: boolean,
+    removeAllCollections: boolean;
 
     /**
      * dropDatabase if true, will drop the database at the end of testing.
      */
-    dropDatabase: boolean
-
+    dropDatabase: boolean;
 }
 
 /**
  * Testkit provides an API for manipulating a MongoDB database during testing.
  */
 export class Testkit {
-
-    constructor(public __config: Partial<Configuration> = {}) { }
+    constructor(public __config: Partial<Configuration> = {}) {}
 
     config: Configuration = merge(defaultConfig, this.__config);
 
@@ -72,63 +67,56 @@ export class Testkit {
      * setUp initializes the client and connects to the database.
      */
     setUp = (): Future<void> => {
-
         let that = this;
 
-        return doFuture(function*() {
-
+        return doFuture(function* () {
             let { url } = that.config;
 
-            that.client = yield noniClient.connect(url ?
-                url : <string>process.env.MONGO_URL);
+            that.client = yield noniClient.connect(
+                url ? url : <string>process.env.MONGO_URL
+            );
 
             that.db = that.client.db();
 
             return pure(<void>undefined);
-
         });
-
-    }
+    };
 
     /**
      * tearDown should be ran after each test so that the desired collections can
      * be removed after each test.
      */
     tearDown = () => {
-
         let that = this;
 
-        return doFuture<void>(function*() {
-
+        return doFuture<void>(function* () {
             let { db, config } = that;
             let { removeAllCollections, collectionNames } = config;
 
-            let names = (removeAllCollections === true) ?
-                (yield noniDb.collections(db))
-                    .map((c: mongo.Collection) => c.collectionName) :
-                collectionNames;
+            let names =
+                removeAllCollections === true
+                    ? (yield noniDb.collections(db)).map(
+                          (c: mongo.Collection) => c.collectionName
+                      )
+                    : collectionNames;
 
-            yield sequential(names.map((c: string) =>
-                noniDb.dropCollection(that.db, c)));
+            yield sequential(
+                names.map((c: string) => noniDb.dropCollection(that.db, c))
+            );
 
             return pure(<void>undefined);
-
         });
-
-    }
+    };
 
     /*
      * setDown should be ran at the end of the entire suite to drop the database
      * and terminate the connection.
      */
     setDown = () => {
-
         let that = this;
 
-        return doFuture<void>(function*() {
-
-            if (that.config.dropDatabase)
-                yield noniDb.drop(that.db);
+        return doFuture<void>(function* () {
+            if (that.config.dropDatabase) yield noniDb.drop(that.db);
 
             let client = that.client;
 
@@ -136,16 +124,13 @@ export class Testkit {
             that.db = <Type>undefined;
 
             return noniClient.disconnect(client);
-
         });
-
-    }
+    };
 
     /**
      * removeCollection by name.
      */
-    removeCollection =
-        (name: string) => noniDb.dropCollection(this.db, name);
+    removeCollection = (name: string) => noniDb.dropCollection(this.db, name);
 
     /**
      * populate a collection with the provided data.
@@ -156,7 +141,7 @@ export class Testkit {
     /**
      * find documents in a collection that match the provided query object.
      */
-    find = (collection: string, qry: object, opts?:object) =>
+    find = (collection: string, qry: object, opts?: object) =>
         noniCollection.find(this.db.collection(collection), qry, opts);
 
     /**
@@ -176,5 +161,4 @@ export class Testkit {
      */
     count = (collection: string, qry: object) =>
         noniCollection.count(this.db.collection(collection), qry);
-
 }

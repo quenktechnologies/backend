@@ -2,9 +2,7 @@
  * This module provides an interface used elsewhere for database models.
  */
 
-import {
-    Future,
-} from '@quenk/noni/lib/control/monad/future';
+import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
@@ -16,7 +14,7 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 export type Id = string | number;
 
 /**
- * Count of records or documents usually returned from count or update 
+ * Count of records or documents usually returned from count or update
  * operations.
  */
 export type Count = number;
@@ -25,17 +23,16 @@ export type Count = number;
  * Model describing common CSUGR operations on documents stored in a database.
  *
  * This interface handles the most common operations; Create,Search,Update,Get,
- * Remove. Implementers may want to add additional methods specific to the 
+ * Remove. Implementers may want to add additional methods specific to the
  * backing database (e.g. aggregate() for mongodb).
  */
 export interface Model<T extends Object> {
-
     /**
      * create a new document.
      *
      * @param data - The object to create in the database.
      */
-    create(data: T): Future<Id>
+    create(data: T): Future<Id>;
 
     /**
      * search for matching documents in the database.
@@ -44,7 +41,7 @@ export interface Model<T extends Object> {
      * @param opts   - An optional object the database driver may accept with
      *                 configuration options.
      */
-    search(filter: object, opts?: object): Future<T[]>
+    search(filter: object, opts?: object): Future<T[]>;
 
     /**
      * update a single document in the database.
@@ -56,8 +53,12 @@ export interface Model<T extends Object> {
      * @param opts     - An optional object the database driver may accept with
      *                   configuration options.
      */
-    update(id: Id, changes: object, qry?: object,
-        opts?: object): Future<boolean>
+    update(
+        id: Id,
+        changes: object,
+        qry?: object,
+        opts?: object
+    ): Future<boolean>;
 
     /**
      * get a single document by its id.
@@ -68,7 +69,7 @@ export interface Model<T extends Object> {
      * @param opts     - An optional object the database driver may accept with
      *                   configuration options.
      */
-    get(id: Id, qry?: object, opts?: object): Future<Maybe<T>>
+    get(id: Id, qry?: object, opts?: object): Future<Maybe<T>>;
 
     /**
      * remove a single document by id.
@@ -79,6 +80,5 @@ export interface Model<T extends Object> {
      * @param opts     - An optional object the database driver may accept with
      *                   configuration options.
      */
-    remove(id: Id, qry?: object, opts?: object): Future<boolean>
-
+    remove(id: Id, qry?: object, opts?: object): Future<boolean>;
 }
