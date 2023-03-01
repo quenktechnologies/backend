@@ -4,7 +4,9 @@
   "description": "Server side APIs and utils used by QT",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha $(find test -name *_test.ts) --"
+    "test": "./node_modules/.bin/mocha $(find test -name *_test.ts) --",
+    "lint": "make lint",
+    "build": "make"
   },
   "files": [
     "lib"
