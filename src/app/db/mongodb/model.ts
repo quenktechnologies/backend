@@ -87,13 +87,6 @@ export interface MongoModel<T extends Object> extends Model<T> {
     removeMany(qry: object, opts?: object): Future<Count>;
 
     /**
-     * count the number of documents that match the query.
-     *
-     * @param qry - The query used to filter the counted documents.
-     */
-    count(qry: object): Future<Count>;
-
-    /**
      * aggregate runs an aggregation pipeline against documents
      * in the collection.
      *

@@ -44,6 +44,15 @@ export interface Model<T extends Object> {
     search(filter: object, opts?: object): Future<T[]>;
 
     /**
+     * count the number of documents that match the query.
+     *
+     * @param qry  - The query used to filter the counted documents.
+     * @param opts - An optional object the database driver may accept with
+     *               configuration options.
+     */
+    count(qry: object, opts?: object): Future<Count>;
+
+    /**
      * update a single document in the database.
      *
      * @param id       - The id of the target document.
