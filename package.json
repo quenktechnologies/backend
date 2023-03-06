@@ -17,7 +17,7 @@
     "@quenk/noni": "^1.46.1",
     "@quenk/noni-mongodb": "^1.0.0",
     "@quenk/preconditions": "^5.6.0",
-    "@quenk/tendril": "^0.43.11",
+    "@quenk/tendril": "^0.43.15",
     "@quenk/wml": "^2.13.1",
     "bcryptjs": "^2.4.3",
     "mongodb": "^5.1.0"
