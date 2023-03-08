@@ -1,6 +1,11 @@
-import { doFuture, Future, pure, raise } from '@quenk/noni/lib/control/monad/future';
+import {
+    doFuture,
+    Future,
+    pure,
+    raise
+} from '@quenk/noni/lib/control/monad/future';
 import { Either, left, right } from '@quenk/noni/lib/data/either';
-import { rmerge, empty } from '@quenk/noni/lib/data/record';
+import { empty } from '@quenk/noni/lib/data/record';
 import { flatten } from '@quenk/noni/lib/data/record/path';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { isObject } from '@quenk/noni/lib/data/type';
@@ -15,18 +20,11 @@ import {
     error,
     badRequest
 } from '@quenk/tendril/lib/app/api/response';
-import { noContent, notFound } from '@quenk/tendril/lib/app/api/response';
+import { notFound } from '@quenk/tendril/lib/app/api/response';
 import { getUserConnection } from '@quenk/tendril/lib/app/connection';
 
-import { Id, Model } from '../model';
-
-const searchDefaults = {
-    page: 1,
-    limit: 500,
-    filters: {},
-    sort: {},
-    fields: {}
-};
+import { Id, Model } from '../../model';
+import { SearchStrategy } from './search/strategy';
 
 export const KEY_PARSERS_BODY = 'qtl.parsers.body';
 export const KEY_PARSERS_QUERY = 'qtl.parsers.query';
@@ -36,38 +34,6 @@ export const KEY_MODEL_NAME = 'qtl.model';
 export const ERR_PAYLOAD_INVALID = 'payload invalid';
 export const ERR_PARSERS_BODY = 'body not parsed safely';
 export const ERR_PARSERS_QUERY = 'query not parsed safely';
-
-/**
- * SearchParams used in search query execution.
- */
-export interface SearchParams {
-    /**
-     * query object used to filter documents.
-     */
-    query: Object;
-
-    /**
-     * page to begin retrieving documents.
-     */
-    page: number;
-
-    /**
-     * limit on documents to retrieve.
-     *
-     * Paging is based on this number and not the total possible result.
-     */
-    limit: number;
-
-    /**
-     * sort object.
-     */
-    sort: Object;
-
-    /**
-     * fields to retrieve for each document.
-     */
-    fields: object;
-}
 
 /**
  * UpdateParams used in update operations.
@@ -112,41 +78,6 @@ export interface RemoveParams {
 }
 
 /**
- * CurrentSection holds pagination information on the current page.
- */
-export interface CurrentSection {
-    /**
-     * count of the current set.
-     */
-    count: number;
-
-    /**
-     * page number of the current set in the total result.
-     */
-    page: number;
-
-    /**
-     * limit indicates how many rows are allowed per page.
-     */
-    limit: number;
-}
-
-/**
- * TotalSection holds pagination information for the entire result.
- */
-export interface TotalSection {
-    /**
-     * count of the entire result set.
-     */
-    count: number;
-
-    /**
-     * pages available for the entire result.
-     */
-    pages: number;
-}
-
-/**
  * CreateResult stores details about the record that was created after a
  * successful create operation.
  */
@@ -165,38 +96,6 @@ export interface CreateResult extends Object {
 }
 
 /**
- * SearchResult contains the result of a successful search as well as additional
- * meta information related to paging.
- */
-export interface SearchResult<T extends Object> {
-    /**
-     * data is the paginated data returned from the query.
-     */
-    data: T[];
-
-    /**
-     * meta contains various useful pieces of information about the search
-     * result.
-     */
-    meta: {
-        /**
-         * pagination information for the result.
-         */
-        pagination: {
-            /**
-             * current page information.
-             */
-            current: CurrentSection;
-
-            /**
-             * total section (the entire result).
-             */
-            total: TotalSection;
-        };
-    };
-}
-
-/**
  * ModelProvider provides model instances to controllers based on the details
  * of the Request.
  *
@@ -211,10 +110,7 @@ export interface ModelProvider<T extends Object, C> {
      * @param conn - The connection instance used to create the model.
      * @param name - The name of the model to produce.
      */
-    getInstance(
-        conn: C,
-        name: string
-    ): Model<T>;
+    getInstance(conn: C, name: string): Model<T>;
 }
 
 /**
@@ -335,12 +231,12 @@ class Preconditions {
  *
  * The connection is automatically checked out using the value of the conn
  * constructor parameter but can be overridden by setting the constant
- * KEY_CONNECTION as a route tag. The model is determined by setting the 
- * KEY_MODEL_NAME tag. 
+ * KEY_CONNECTION as a route tag. The model is determined by setting the
+ * KEY_MODEL_NAME tag.
  * Each route has a set of preconditions that must pass before the operation
- * is executed, these are implemented in an internal Preconditions class. In 
- * particular, the query and body properties must be suitably verified before 
- * being used by the route in question. This is to prevent accidentally 
+ * is executed, these are implemented in an internal Preconditions class. In
+ * particular, the query and body properties must be suitably verified before
+ * being used by the route in question. This is to prevent accidentally
  * inputting unchecked user input into databases.
  *
  * Code verifying the body and query values must set the respective
@@ -365,12 +261,17 @@ class Preconditions {
  */
 export abstract class ApiController<C> implements Resource {
     /**
-     * @param conn   - This id of the pooled connection that will be checked out
-     *                 before each operation.
+     * @param conn        - This id of the pooled connection that will be
+     *                      checked out before each operation.
+     * @param models      - Provider for model instances.
+     * @param stratagey   - The SearchStrategy to use for searches.
      *
-     * @param models - Provider for model instances.
      */
-    constructor(public conn: string, public models: ModelProvider<Object, C>) { }
+    constructor(
+        public conn: string,
+        public models: ModelProvider<Object, C>,
+        public strategy: SearchStrategy
+    ) {}
 
     /**
      * @internal
@@ -378,26 +279,26 @@ export abstract class ApiController<C> implements Resource {
     getModel(req: Request): Future<Model<Object>> {
         let that = this;
 
-        return doFuture(function*() {
-
+        return doFuture(function* () {
             let name = String(req.prs.getOrElse(KEY_CONNECTION, 'main'));
 
             let mconn = yield getUserConnection(name);
 
             if (mconn.isNothing())
-                return raise(new Error(`getModel(): Unknown connection "${name}"!`));
+                return raise(
+                    new Error(`getModel(): Unknown connection "${name}"!`)
+                );
 
             let modelName = <string>req.prs.getOrElse(KEY_MODEL_NAME, '');
 
             return pure(that.models.getInstance(mconn.get(), modelName));
-
         });
     }
 
     create(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forCreate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -413,68 +314,21 @@ export abstract class ApiController<C> implements Resource {
     search(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forSearch(req);
 
             if (checked.isLeft()) return checked.takeLeft();
 
             let model = yield fork(that.getModel(req));
 
-            let { filters, page, limit, sort, fields } = rmerge(
-                req.query,
-                searchDefaults
-            );
-
-            let n = yield fork(model.count(filters));
-
-            let pageCount = Math.ceil(n / limit);
-
-            //adjust page value so first page will skip 0 records
-            page = page - 1;
-
-            let current =
-                page < 0 || pageCount === 0
-                    ? 0
-                    : page >= pageCount
-                        ? pageCount - 1
-                        : page;
-
-            let skip = current * limit;
-
-            let o = { skip, limit, sort, projection: fields };
-
-            let data = yield fork(model.search(filters, o));
-
-            let result = {
-                data,
-
-                meta: {
-                    pagination: {
-                        current: {
-                            count: data.length,
-
-                            page: current + 1,
-
-                            limit
-                        },
-
-                        total: {
-                            count: n,
-
-                            pages: pageCount
-                        }
-                    }
-                }
-            };
-
-            return result.data.length > 0 ? ok(result) : noContent();
+            return ok(yield fork(that.strategy.execute(model, req.query)));
         });
     }
 
     update(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forUpdate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -496,7 +350,7 @@ export abstract class ApiController<C> implements Resource {
     get(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -514,7 +368,7 @@ export abstract class ApiController<C> implements Resource {
     remove(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();

@@ -14,10 +14,48 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 export type Id = string | number;
 
 /**
+ * Index is a pointer to a document in a result set.
+ */
+export type Index = number;
+
+/**
  * Count of records or documents usually returned from count or update
  * operations.
  */
 export type Count = number;
+
+/**
+ * SearchParams for search operations.
+ *
+ * This is largely based on MongoDB and may be revisited in the future.
+ */
+export interface SearchParams {
+    /**
+     * filters object used to filter documents.
+     */
+    filters: Object;
+
+    /**
+     * offset indicates which document in the result to start returning
+     * documents from.
+     */
+    offset?: Index;
+
+    /**
+     * limit indicates how many documents to limit bthe result by.
+     */
+    limit?: Count;
+
+    /**
+     * sort is an object indicating how to sort the results.
+     */
+    sort?: Object;
+
+    /**
+     * fields to retrieve for each document.
+     */
+    fields?: object;
+}
 
 /**
  * Model describing common CSUGR operations on documents stored in a database.
@@ -37,20 +75,16 @@ export interface Model<T extends Object> {
     /**
      * search for matching documents in the database.
      *
-     * @param filter - An object the database driver can use to filter results.
-     * @param opts   - An optional object the database driver may accept with
-     *                 configuration options.
+     * @param qry - Parameters for the search.
      */
-    search(filter: object, opts?: object): Future<T[]>;
+    search(qry: SearchParams): Future<T[]>;
 
     /**
      * count the number of documents that match the query.
      *
-     * @param qry  - The query used to filter the counted documents.
-     * @param opts - An optional object the database driver may accept with
-     *               configuration options.
+     * @param qry  - Parameters for the count.
      */
-    count(qry: object, opts?: object): Future<Count>;
+    count(qry: SearchParams): Future<Count>;
 
     /**
      * update a single document in the database.
@@ -59,15 +93,8 @@ export interface Model<T extends Object> {
      * @param changes  - Object representing the desired changes.
      * @param qry      - An optional object representing additional query params
      *                   this may be used to further filter the updated document.
-     * @param opts     - An optional object the database driver may accept with
-     *                   configuration options.
      */
-    update(
-        id: Id,
-        changes: object,
-        qry?: object,
-        opts?: object
-    ): Future<boolean>;
+    update(id: Id, changes: object, qry?: Object): Future<boolean>;
 
     /**
      * get a single document by its id.
@@ -75,10 +102,8 @@ export interface Model<T extends Object> {
      * @param qry      - An optional object representing additional query params
      *                   this may be used to further filter the returned
      *                   document.
-     * @param opts     - An optional object the database driver may accept with
-     *                   configuration options.
      */
-    get(id: Id, qry?: object, opts?: object): Future<Maybe<T>>;
+    get(id: Id, qry?: Object): Future<Maybe<T>>;
 
     /**
      * remove a single document by id.
@@ -86,8 +111,6 @@ export interface Model<T extends Object> {
      * @param qry      - An optional object representing additional query params
      *                   this may be used to further filter the returned
      *                   document.
-     * @param opts     - An optional object the database driver may accept with
-     *                   configuration options.
      */
-    remove(id: Id, qry?: object, opts?: object): Future<boolean>;
+    remove(id: Id, qry?: Object): Future<boolean>;
 }
