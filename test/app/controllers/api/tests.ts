@@ -13,7 +13,7 @@ import {
     KEY_CONNECTION,
     KEY_PARSERS_BODY,
     KEY_PARSERS_QUERY
-} from '../../../lib/app/controllers/api';
+} from '../../../../lib/app/controllers/api';
 import { TestResource, TestContext } from './fixtures';
 
 /**
@@ -63,7 +63,7 @@ const methodMap: { [key: string]: string } = {
 };
 
 export const doTest = (conf: TestConf) =>
-    doFuture(function* () {
+    doFuture(function*() {
         let {
             method,
             context = {},

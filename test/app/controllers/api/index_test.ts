@@ -7,7 +7,7 @@ import {
     ERR_PARSERS_BODY,
     ERR_PARSERS_QUERY,
     ERR_PAYLOAD_INVALID
-} from '../../../lib/app/controllers/api';
+} from '../../../../lib/app/controllers/api';
 import { Type } from '@quenk/noni/lib/data/type';
 
 process.env.TENDRIL_SEND_500_ERRORS = 'yes';
