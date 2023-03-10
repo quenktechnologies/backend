@@ -1,14 +1,16 @@
 import * as tests from './tests';
 
+import { Type } from '@quenk/noni/lib/data/type';
+
 import { Pool } from '@quenk/tendril/lib/app/connection';
 
-import { TestConnection } from './fixtures';
 import {
     ERR_PARSERS_BODY,
     ERR_PARSERS_QUERY,
     ERR_PAYLOAD_INVALID
 } from '../../../../lib/app/controllers/api';
-import { Type } from '@quenk/noni/lib/data/type';
+import { PageData } from '../../../../lib/app/controllers/api/search';
+import { TestConnection } from './fixtures';
 
 process.env.TENDRIL_SEND_500_ERRORS = 'yes';
 
@@ -110,19 +112,7 @@ describe('api', () => {
                 send: [
                     {
                         data: [],
-                        meta: {
-                            pagination: {
-                                current: {
-                                    count: 1,
-                                    page: 1,
-                                    limit: 1
-                                },
-                                total: {
-                                    count: 1,
-                                    pages: 1
-                                }
-                            }
-                        }
+                        pages: new PageData(1, 1, 1, 1, 1)
                     }
                 ]
             };

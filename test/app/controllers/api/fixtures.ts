@@ -9,16 +9,25 @@ import { pure as freePure } from '@quenk/noni/lib/control/monad/free';
 import { make } from '@quenk/noni/lib/data/array';
 import { Request, ClientRequest } from '@quenk/tendril/lib/app/api/request';
 
-import { ApiController, ModelProvider } from '../../../../lib/app/controllers/api';
+import {
+    ApiController,
+    ModelProvider
+} from '../../../../lib/app/controllers/api';
 import { Id, SearchParams, Model } from '../../../../lib/app/model';
 import {
     PagedSearchParams,
     SearchStrategy
 } from '../../../../lib/app/controllers/api/search/strategy';
-import { SearchResult } from '../../../../lib/app/controllers/api/search/result';
+import {
+    PageData,
+    SearchResult
+} from '../../../../lib/app/controllers/api/search';
 
 export class MockModel implements Model<Object> {
-    constructor(public connection: { id: string }, public name: string) { }
+    constructor(
+        public connection: { id: string } = { id: 'main' },
+        public name = 'user'
+    ) {}
 
     MOCK = new Mock();
 
@@ -110,24 +119,7 @@ export class TestSearchStrategy implements SearchStrategy {
             [model, qry],
             pure({
                 data: [],
-
-                meta: {
-                    pagination: {
-                        current: {
-                            count: 1,
-
-                            page: 1,
-
-                            limit: 1
-                        },
-
-                        total: {
-                            count: 1,
-
-                            pages: 1
-                        }
-                    }
-                }
+                pages: new PageData(1, 1, 1, 1, 1)
             })
         );
     }
@@ -170,7 +162,7 @@ export class TestResource extends ApiController<object> {
 }
 
 export class TestContext {
-    constructor(public req: object) { }
+    constructor(public req: object) {}
 
     module = {
         app: {
@@ -210,7 +202,7 @@ export class TestContext {
         }
     };
 
-    onError = () => { };
+    onError = () => {};
 
     filters = [];
 
@@ -222,7 +214,7 @@ export class TestContext {
 }
 
 export class TestConnection {
-    constructor(public name: string) { }
+    constructor(public name: string) {}
 
     open() {
         return voidPure;

@@ -43,7 +43,7 @@ interface TestConf {
 
         strategy?: false | object;
 
-        response?: Record<Value[]>;
+        response?: Record<Type[]>;
     };
 
     test?: TestHook;
@@ -63,7 +63,7 @@ const methodMap: { [key: string]: string } = {
 };
 
 export const doTest = (conf: TestConf) =>
-    doFuture(function*() {
+    doFuture(function* () {
         let {
             method,
             context = {},

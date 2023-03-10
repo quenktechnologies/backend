@@ -4,7 +4,7 @@ import { Object } from '@quenk/noni/lib/data/jsonx';
 import { rmerge } from '@quenk/noni/lib/data/record';
 
 import { Count, Index, Model } from '../../../model';
-import { SearchResult } from './result';
+import { SearchResult, PageData } from '.';
 
 /**
  * PagedSearchParams encapsulates a request to search desiring a paginated
@@ -14,17 +14,17 @@ export interface PagedSearchParams {
     /**
      * filters object used to filter documents.
      */
-    filters: Object;
+    filters?: Object;
 
     /**
      * page indicates the current page to return results for.
      */
-    page: Index;
+    page?: Index;
 
     /**
      * perPage indicates how many documents to consider part of a page.
      */
-    perPage: Count;
+    perPage?: Count;
 
     /**
      * sort is an object indicating how to sort the results.
@@ -57,7 +57,7 @@ export interface SearchStrategy {
 const searchDefaults = {
     filters: {},
     page: 1,
-    perPage: 100,
+    perPage: 25,
     sort: {},
     fields: {}
 };
@@ -81,9 +81,9 @@ export class SkipAndLimit implements SearchStrategy {
                 qry
             );
 
-            let totalPages = yield model.count({ filters });
+            let totalCount = yield model.count({ filters });
 
-            let pageCount = Math.ceil(totalPages / perPage);
+            let pageCount = Math.ceil(totalCount / perPage);
 
             //adjust page value so first page will skip 0 records
             page = page - 1;
@@ -107,24 +107,13 @@ export class SkipAndLimit implements SearchStrategy {
 
             return pure({
                 data,
-
-                meta: {
-                    pagination: {
-                        current: {
-                            count: data.length,
-
-                            page: currentPage + 1,
-
-                            limit: perPage
-                        },
-
-                        total: {
-                            count: totalPages,
-
-                            pages: pageCount
-                        }
-                    }
-                }
+                pages: new PageData(
+                    currentPage + 1,
+                    data.length,
+                    perPage,
+                    pageCount,
+                    totalCount
+                )
             });
         });
     }
