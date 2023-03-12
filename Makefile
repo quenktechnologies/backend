@@ -5,6 +5,10 @@ lib: $(shell find src -type f)
 	cp -R -u src/* lib
 	./node_modules/.bin/tsc --project lib
 
+.PHONY: precommit
+precommit:
+	make format && make lint
+
 .PHONY: format
 format:
 	./node_modules/.bin/prettier --write {src,test}/**/*.{ts,js,json} $(ARGS)
