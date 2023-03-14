@@ -270,7 +270,7 @@ export abstract class ApiController<C> implements Resource {
         public conn: string,
         public models: ModelProvider<Object, C>,
         public strategy: SearchStrategy
-    ) { }
+    ) {}
 
     /**
      * @internal
@@ -278,7 +278,7 @@ export abstract class ApiController<C> implements Resource {
     getModel(req: Request): Future<Model<Object>> {
         let that = this;
 
-        return doFuture(function*() {
+        return doFuture(function* () {
             let name = String(req.prs.getOrElse(KEY_CONNECTION, 'main'));
 
             let mconn = yield getUserConnection(name);
@@ -297,7 +297,7 @@ export abstract class ApiController<C> implements Resource {
     create(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forCreate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -313,7 +313,7 @@ export abstract class ApiController<C> implements Resource {
     search(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forSearch(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -327,7 +327,7 @@ export abstract class ApiController<C> implements Resource {
     update(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forUpdate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -349,7 +349,7 @@ export abstract class ApiController<C> implements Resource {
     get(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -367,7 +367,7 @@ export abstract class ApiController<C> implements Resource {
     remove(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function*() {
+        return doAction(function* () {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();

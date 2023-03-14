@@ -11,9 +11,7 @@ import { Precondition } from '@quenk/preconditions/lib/async';
  * Checks map.
  */
 export interface Checks {
-
-    [key: string]: Precondition<Value, Value>
-
+    [key: string]: Precondition<Value, Value>;
 }
 
 const supportedMethods = ['POST', 'PATCH'];
@@ -26,34 +24,29 @@ const supportedMethods = ['POST', 'PATCH'];
  * use. If the check fails, a 409 status is sent along with the errors. If
  * no check is found for the specified model, status 400 is sent.
  */
-export const checkBody = (
-    full: Checks,
-    partial:Checks,
-    messages: object = {}) => (req: Request): Action<void> =>
-        doAction(function*() {
-
+export const checkBody =
+    (full: Checks, partial: Checks, messages: object = {}) =>
+    (req: Request): Action<void> =>
+        doAction(function* () {
             if (!supportedMethods.includes(req.method)) return next(req);
 
             let ptr = <string>req.route.tags.model;
 
-            let check = ((req.method === 'PATCH') ? partial : full)[ptr];
+            let check = (req.method === 'PATCH' ? partial : full)[ptr];
 
             if (!check) return badRequest();
 
             let eresult = yield fork(check(req.body));
 
             if (eresult.isLeft()) {
-
                 let errors = eresult.takeLeft().explain(messages);
 
                 yield conflict({ errors });
 
                 return abort();
-
             }
 
             req.body = eresult.takeRight();
 
             return next(req);
-
         });

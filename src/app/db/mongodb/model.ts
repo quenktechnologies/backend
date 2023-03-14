@@ -64,14 +64,14 @@ export abstract class BaseModel<T extends Object> implements MongoModel<T> {
     constructor(
         public database: mongo.Db,
         public collection: mongo.Collection
-    ) { }
+    ) {}
 
     id = 'id';
 
     create(data: T): Future<Id> {
         let that = this;
 
-        return doFuture<Id>(function*() {
+        return doFuture<Id>(function* () {
             let result = yield noniMongo.insertOne(that.collection, data);
 
             let qry = { _id: result.insertedId };
@@ -85,25 +85,15 @@ export abstract class BaseModel<T extends Object> implements MongoModel<T> {
     }
 
     count(params: SearchParams): Future<number> {
-        let {
-            filters = {},
-            offset,
-            limit,
-        } = params;
+        let { filters = {}, offset, limit } = params;
         return noniMongo.count(this.collection, filters, {
             limit,
-            skip: offset,
+            skip: offset
         });
     }
 
     search(params: SearchParams): Future<T[]> {
-        let {
-            filters = {},
-            offset,
-            limit,
-            sort,
-            fields
-        } = params;
+        let { filters = {}, offset, limit, sort, fields } = params;
         return noniMongo.find(this.collection, filters, {
             projection: merge({ _id: false }, fields || {}),
             limit,
@@ -112,12 +102,8 @@ export abstract class BaseModel<T extends Object> implements MongoModel<T> {
         });
     }
 
-    update(
-        id: Id,
-        changes: Object,
-        params?: UpdateParams,
-    ): Future<boolean> {
-        let actualQry = getIdQry(this, id, params && params.filters || {});
+    update(id: Id, changes: Object, params?: UpdateParams): Future<boolean> {
+        let actualQry = getIdQry(this, id, (params && params.filters) || {});
 
         return noniMongo
             .updateOne(this.collection, actualQry, { $set: flatten(changes) })

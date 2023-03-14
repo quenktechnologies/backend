@@ -13,7 +13,6 @@ class Instance extends lib.BaseModel<Type> {
     id = 'id';
 
     static get orders() {
-
         return [
             { id: 1, customer: 'Sally', items: [], group: 1 },
             { id: 2, customer: 'Yui', items: [], group: 1 },
@@ -22,16 +21,10 @@ class Instance extends lib.BaseModel<Type> {
             { id: 5, customer: 'Joe', items: [], group: 3 },
             { id: 6, customer: 'Obafemi', items: [], group: 3 }
         ];
-
     }
 
     static get() {
-
-        return new Instance(
-            dbkit.db,
-            dbkit.db.collection('orders')
-        );
-
+        return new Instance(dbkit.db, dbkit.db.collection('orders'));
     }
 
     static populate() {
@@ -60,7 +53,7 @@ describe('BaseModel', () => {
             await Instance.populate();
 
             let docs = await model.search({
-                filters: { group: 2 },
+                filters: { group: 2 }
             });
             assert(docs).equate([Instance.orders[2], Instance.orders[3]]);
         });
@@ -106,7 +99,9 @@ describe('BaseModel', () => {
                 filters: {},
                 fields: { id: true }
             });
-            assert(docs).equate(Instance.orders.map(order => ({ id: order.id })));
+            assert(docs).equate(
+                Instance.orders.map(order => ({ id: order.id }))
+            );
         });
 
         it('should do it all together', async () => {
@@ -124,7 +119,7 @@ describe('BaseModel', () => {
         });
     });
 
-    describe('update()', function() {
+    describe('update()', function () {
         it('should update a document', async () => {
             let model = Instance.get();
             await Instance.populate();
@@ -138,7 +133,9 @@ describe('BaseModel', () => {
                 { projection: { _id: 0 } }
             );
 
-            assert(mdoc.get()).equate(merge(Instance.orders[1], { customer: 'George' }))
+            assert(mdoc.get()).equate(
+                merge(Instance.orders[1], { customer: 'George' })
+            );
         });
 
         it('should return false if it cannot update', async () => {
@@ -148,7 +145,11 @@ describe('BaseModel', () => {
             let yes = await model.update(24, { customer: 'George' });
             assert(yes, 'update failed').false();
 
-            let docs = await dbkit.find('orders', {}, { projection: { _id: 0 } });
+            let docs = await dbkit.find(
+                'orders',
+                {},
+                { projection: { _id: 0 } }
+            );
             assert(docs).equate(Instance.orders);
         });
 
@@ -159,7 +160,11 @@ describe('BaseModel', () => {
             let yes = await model.update(24, { customer: 'George' });
             assert(yes, 'update failed').false();
 
-            let docs = await dbkit.find('orders', {}, { projection: { _id: 0 } });
+            let docs = await dbkit.find(
+                'orders',
+                {},
+                { projection: { _id: 0 } }
+            );
             assert(docs).equate(Instance.orders);
         });
 
@@ -169,11 +174,21 @@ describe('BaseModel', () => {
 
             await dbkit.update('orders', {}, { $set: { id: 1 } });
 
-            let yes = await model.update(1, { customer: 'Oba' }, { filters: { customer: 'Obafemi' } });
+            let yes = await model.update(
+                1,
+                { customer: 'Oba' },
+                { filters: { customer: 'Obafemi' } }
+            );
             assert(yes, 'update complete').true();
 
-            let doc = await dbkit.findOne('orders', { customer: 'Oba' }, { projection: { _id: 0 } });
-            assert(doc.get()).equate(merge(Instance.orders[5], { id: 1, customer: 'Oba' }));
+            let doc = await dbkit.findOne(
+                'orders',
+                { customer: 'Oba' },
+                { projection: { _id: 0 } }
+            );
+            assert(doc.get()).equate(
+                merge(Instance.orders[5], { id: 1, customer: 'Oba' })
+            );
         });
     });
 
@@ -206,13 +221,15 @@ describe('BaseModel', () => {
             await Instance.populate();
             await dbkit.update('orders', {}, { $set: { id: 3 } });
 
-            let mdoc = await model.get(3, { filters: { customer: 'Obafemi' }, fields: { id: 1, customer: 1 } });
+            let mdoc = await model.get(3, {
+                filters: { customer: 'Obafemi' },
+                fields: { id: 1, customer: 1 }
+            });
             assert(mdoc.get()).equate({ id: 3, customer: 'Obafemi' });
         });
-
     });
 
-    describe('remove()', function() {
+    describe('remove()', function () {
         it('should remove a document', async () => {
             let model = Instance.get();
             await Instance.populate();
@@ -228,17 +245,20 @@ describe('BaseModel', () => {
             await Instance.populate();
             await dbkit.update('orders', {}, { $set: { id: 3 } });
 
-            let yes = await model.remove(3, { filters: { customer: 'Obafemi' } });
+            let yes = await model.remove(3, {
+                filters: { customer: 'Obafemi' }
+            });
             assert(yes, 'delete successful').true();
 
             let hit = await dbkit.findOne('orders', { customer: 'Obafemi' });
             assert(hit.isNothing(), 'document deleted').true();
-            assert(await dbkit.count('orders', {}), 'other docs remain').
-                equal(Instance.orders.length - 1);
+            assert(await dbkit.count('orders', {}), 'other docs remain').equal(
+                Instance.orders.length - 1
+            );
         });
     });
 
-    describe('count()', function() {
+    describe('count()', function () {
         it('should count documents', async () => {
             let model = Instance.get();
             await Instance.populate();
@@ -252,7 +272,9 @@ describe('BaseModel', () => {
             await Instance.populate();
 
             let n = await model.count({ filters: { group: 3 } });
-            assert(n).equate(Instance.orders.filter(order => order.group === 3).length);
+            assert(n).equate(
+                Instance.orders.filter(order => order.group === 3).length
+            );
         });
 
         it('should limit', async () => {
@@ -278,14 +300,12 @@ describe('BaseModel', () => {
         });
     });
 
-    describe('aggregate()', function() {
+    describe('aggregate()', function () {
         it('should run a pipeline', async () => {
             let model = Instance.get();
             await Instance.populate();
 
-            let docs = await model.aggregate([
-                { $match: { customer: 'Yui' } }
-            ]);
+            let docs = await model.aggregate([{ $match: { customer: 'Yui' } }]);
 
             delete docs[0]._id;
             assert(docs.length).equal(1);

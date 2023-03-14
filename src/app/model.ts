@@ -28,7 +28,7 @@ export type Count = number;
 /**
  * FieldSet specifies a set of fields to include or omit in the query results.
  */
-export interface FieldSet extends Record<boolean | 1 | 0> { }
+export type FieldSet = Record<boolean | 1 | 0>;
 
 /**
  * SortDir indicates ordering to apply to a sort key.
@@ -83,12 +83,10 @@ export interface SearchParams extends GetParams {
  * method.
  */
 export interface UpdateParams {
-
     /**
      * filters to include in the update request.
      */
-    filters: Object
-
+    filters: Object;
 }
 
 /**
