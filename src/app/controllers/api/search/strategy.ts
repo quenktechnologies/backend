@@ -1,9 +1,8 @@
 import { Future, doFuture, pure } from '@quenk/noni/lib/control/monad/future';
 import { Object } from '@quenk/noni/lib/data/jsonx';
-
 import { rmerge } from '@quenk/noni/lib/data/record';
 
-import { Count, Index, Model } from '../../../model';
+import { Count, FieldSet, Index, Model, SortSet } from '../../../model';
 import { SearchResult, PageData } from '.';
 
 /**
@@ -29,12 +28,12 @@ export interface PagedSearchParams {
     /**
      * sort is an object indicating how to sort the results.
      */
-    sort?: Object;
+    sort?: SortSet;
 
     /**
      * fields to retrieve for each document.
      */
-    fields?: object;
+    fields?: FieldSet;
 }
 
 /**

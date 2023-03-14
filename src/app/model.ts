@@ -4,6 +4,7 @@
 
 import { Future } from '@quenk/noni/lib/control/monad/future';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
+import { Record } from '@quenk/noni/lib/data/record';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
 /**
@@ -25,6 +26,23 @@ export type Index = number;
 export type Count = number;
 
 /**
+ * FieldSet specifies a set of fields to include or omit in the query results.
+ */
+export interface FieldSet extends Record<boolean | 1 | 0> {}
+
+/**
+ * SortDir indicates ordering to apply to a sort key.
+ *
+ * 1 indicates ascending, -1 indicates descending.
+ */
+export type SortDir = 1 | -1;
+
+/**
+ * SortSet maps key names to sort indicators for query results.
+ */
+export type SortSet = Record<SortDir>;
+
+/**
  * SearchParams for search operations.
  *
  * This is largely based on MongoDB and may be revisited in the future.
@@ -42,19 +60,19 @@ export interface SearchParams {
     offset?: Index;
 
     /**
-     * limit indicates how many documents to limit bthe result by.
+     * limit indicates how many documents to limit the result by.
      */
     limit?: Count;
 
     /**
      * sort is an object indicating how to sort the results.
      */
-    sort?: Object;
+    sort?: SortSet;
 
     /**
      * fields to retrieve for each document.
      */
-    fields?: object;
+    fields?: FieldSet;
 }
 
 /**
@@ -73,18 +91,18 @@ export interface Model<T extends Object> {
     create(data: T): Future<Id>;
 
     /**
-     * search for matching documents in the database.
-     *
-     * @param qry - Parameters for the search.
-     */
-    search(qry: SearchParams): Future<T[]>;
-
-    /**
      * count the number of documents that match the query.
      *
      * @param qry  - Parameters for the count.
      */
     count(qry: SearchParams): Future<Count>;
+
+    /**
+     * search for matching documents in the database.
+     *
+     * @param qry - Parameters for the search.
+     */
+    search(qry: SearchParams): Future<T[]>;
 
     /**
      * update a single document in the database.
@@ -94,7 +112,7 @@ export interface Model<T extends Object> {
      * @param qry      - An optional object representing additional query params
      *                   this may be used to further filter the updated document.
      */
-    update(id: Id, changes: object, qry?: Object): Future<boolean>;
+    update(id: Id, changes: Object, qry?: Object): Future<boolean>;
 
     /**
      * get a single document by its id.

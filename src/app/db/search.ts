@@ -4,14 +4,30 @@ import { isString } from '@quenk/noni/lib/data/type';
 import { Except } from '@quenk/noni/lib/control/error';
 import { left } from '@quenk/noni/lib/data/either';
 
+import { EnabledPolicies as _EnabledPolicies } from '@quenk/search-filters/lib/compile/policy';
 import { Source } from '@quenk/search-filters/lib/compile';
 
-import { EnabledPolicies as _EnabledPolicies } from '@quenk/search-filters/lib/compile/policy';
+import { SortDir, SortSet } from '../model';
 
 /**
  * EnabledPolicies type specialized to JSON values.
  */
 export type EnabledPolicies = _EnabledPolicies<Value>;
+
+/**
+ * PoliciesAvailable is a mapping of model names to search-filter policies
+ * allowed.
+ */
+export type PoliciesAvailable = Record<EnabledPolicies>;
+
+/**
+ * SortString is a comma delimited string of the form 'name', '+name' or '-name'
+ * which  indicates what field(s) to sort results on.
+ *
+ * "+" indicates ascending, "-" indicates descending. Omitting either defaults
+ * to ascending.
+ */
+export type SortString = string;
 
 /**
  * FilterCompiler is any object capable of compiling a search-filters string.
@@ -44,27 +60,6 @@ export const compileFilter = (
 
     return ret;
 };
-
-/**
- * SortString is a comma delimited string of the form 'name', '+name' or '-name'
- * which  indicates what field(s) to sort results on.
- *
- * "+" indicates ascending, "-" indicates descending. Omitting either defaults
- * to ascending.
- */
-export type SortString = string;
-
-/**
- * SortDir indicates ordering to apply to a sort key.
- *
- * 1 indicates ascending, -1 indicates descending.
- */
-export type SortDir = 1 | -1;
-
-/**
- * SortSet is an object representing sort indicators for a search query.
- */
-export type SortSet = Record<SortDir>;
 
 /**
  * compileSort compiles a string indicating the sort direction on one or more

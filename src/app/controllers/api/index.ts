@@ -264,7 +264,7 @@ export abstract class ApiController<C> implements Resource {
      * @param conn        - This id of the pooled connection that will be
      *                      checked out before each operation.
      * @param models      - Provider for model instances.
-     * @param stratagey   - The SearchStrategy to use for searches.
+     * @param strategy    - The SearchStrategy to use for searches.
      *
      */
     constructor(

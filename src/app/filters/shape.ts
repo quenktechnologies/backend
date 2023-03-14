@@ -74,7 +74,10 @@ export interface ShapeContext {
     $env: NodeJS.ProcessEnv;
 }
 
-const mkCtx = (req: Request): ShapeContext => ({
+/**
+ * @internal
+ */
+export const mkCtx = (req: Request): ShapeContext => ({
     $request: req,
     $params: req.params,
     $body: <Object>req.body,
