@@ -154,15 +154,13 @@ export type ModelName = string;
  * ModelGetter is a function that provides an instance of a Model given its
  * underlying connection.
  */
-export type ModelGetter<C, T extends Object> = (db: C) => Model<T>
+export type ModelGetter<C, T extends Object> = (db: C) => Model<T>;
 
 /**
  * ModelMap is a record of identifying names to Models.
  */
 export interface ModelMap<C, T extends Object> {
-
-    [key: string]: ModelGetter<C, T>
-
+    [key: string]: ModelGetter<C, T>;
 }
 
 /**
@@ -185,14 +183,9 @@ export interface ModelProvider<C, T extends Object> {
  * MapModelProvider generates model instances from the provided record map.
  */
 export class MapModelProvider<C, T extends Object> {
-
-    constructor(public models: ModelMap<C, T> = {}) { }
+    constructor(public models: ModelMap<C, T> = {}) {}
 
     getInstance(conn: C, name: ModelName): Maybe<Model<T>> {
-
-        return fromNullable(this.models[name])
-            .map(getter => getter(conn));
-
+        return fromNullable(this.models[name]).map(getter => getter(conn));
     }
-
 }

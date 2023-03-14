@@ -11,9 +11,7 @@ import { Request, ClientRequest } from '@quenk/tendril/lib/app/api/request';
 import { noop } from '@quenk/tendril/lib/app/api/control';
 import { Action, Api } from '@quenk/tendril/lib/app/api';
 
-import {
-    ApiController,
-} from '../../../../lib/app/controllers/api';
+import { ApiController } from '../../../../lib/app/controllers/api';
 import {
     Id,
     SearchParams,
@@ -35,7 +33,7 @@ export class MockModel implements Model<Object> {
     constructor(
         public connection: { id: string } = { id: 'main' },
         public name = 'user'
-    ) { }
+    ) {}
 
     MOCK = new Mock();
 
@@ -97,7 +95,6 @@ export class MockModel implements Model<Object> {
     remove(id: Id, qry?: UpdateParams): Future<boolean> {
         return this.MOCK.invoke('remove', [id, qry], pure(<boolean>true));
     }
-
 }
 
 export class TestModelProvider
@@ -171,7 +168,7 @@ export class TestResource extends ApiController<object> {
 }
 
 export class TestContext {
-    constructor(public req: object) { }
+    constructor(public req: object) {}
 
     MOCK = new Mock();
 
@@ -213,7 +210,7 @@ export class TestContext {
         }
     };
 
-    onError = () => { };
+    onError = () => {};
 
     filters = [];
 
@@ -235,7 +232,7 @@ export class TestContext {
 }
 
 export class TestConnection {
-    constructor(public name: string) { }
+    constructor(public name: string) {}
 
     open() {
         return voidPure;
