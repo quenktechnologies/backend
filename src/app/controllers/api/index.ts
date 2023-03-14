@@ -22,7 +22,7 @@ import {
 import { notFound } from '@quenk/tendril/lib/app/api/response';
 import { getUserConnection } from '@quenk/tendril/lib/app/connection';
 
-import { Id, Model } from '../../model';
+import { Model, ModelProvider } from '../../model';
 import { SearchStrategy } from './search/strategy';
 
 export const KEY_PARSERS_BODY = 'qtl.parsers.body';
@@ -33,84 +33,6 @@ export const KEY_MODEL_NAME = 'qtl.model';
 export const ERR_PAYLOAD_INVALID = 'payload invalid';
 export const ERR_PARSERS_BODY = 'body not parsed safely';
 export const ERR_PARSERS_QUERY = 'query not parsed safely';
-
-/**
- * UpdateParams used in update operations.
- */
-export interface UpdateParams {
-    /**
-     * query object used to further specify the target object.
-     */
-    query: Object;
-
-    /**
-     * changes to be made via the $set operation.
-     *
-     * This is in addition to the request body.
-     */
-    changes: Object;
-}
-
-/**
- * GetParams used in single result search operations.
- */
-export interface GetParams {
-    /**
-     * query object used to further specify the target object.
-     */
-    query: Object;
-
-    /**
-     * fields to project on.
-     */
-    fields: object;
-}
-
-/**
- * RemoveParams used in remove operations.
- */
-export interface RemoveParams {
-    /**
-     * query object used to further specify the target object.
-     */
-    query: Object;
-}
-
-/**
- * CreateResult stores details about the record that was created after a
- * successful create operation.
- */
-export interface CreateResult extends Object {
-    /**
-     * data contains properties of the record, currently only the id is expected.
-     */
-    data: {
-        /**
-         * id assigned to the new record.
-         *
-         *  id
-         */
-        id: Id;
-    };
-}
-
-/**
- * ModelProvider provides model instances to controllers based on the details
- * of the Request.
- *
- * @typeParam T - The data type of the model.
- * @typeParam C - The underlying connection.
- */
-export interface ModelProvider<T extends Object, C> {
-    /**
-     * fromRequest provides a model instance using the parameters provided.
-     *
-     *
-     * @param conn - The connection instance used to create the model.
-     * @param name - The name of the model to produce.
-     */
-    getInstance(conn: C, name: string): Model<T>;
-}
 
 /**
  * Resource is an interface representing a controller for an API endpoint.
@@ -268,9 +190,9 @@ export abstract class ApiController<C> implements Resource {
      */
     constructor(
         public conn: string,
-        public models: ModelProvider<Object, C>,
+        public models: ModelProvider<C, Object>,
         public strategy: SearchStrategy
-    ) {}
+    ) { }
 
     /**
      * @internal
@@ -278,7 +200,7 @@ export abstract class ApiController<C> implements Resource {
     getModel(req: Request): Future<Model<Object>> {
         let that = this;
 
-        return doFuture(function* () {
+        return doFuture(function*() {
             let name = String(req.prs.getOrElse(KEY_CONNECTION, 'main'));
 
             let mconn = yield getUserConnection(name);
@@ -288,16 +210,26 @@ export abstract class ApiController<C> implements Resource {
                     new Error(`getModel(): Unknown connection "${name}"!`)
                 );
 
-            let modelName = <string>req.prs.getOrElse(KEY_MODEL_NAME, '');
+            let modelName = <string>req.prs.getOrElse(
+                KEY_MODEL_NAME,
+                req.route.path
+            );
 
-            return pure(that.models.getInstance(mconn.get(), modelName));
+            let mmodel = that.models.getInstance(mconn.get(), modelName);
+
+            if (mmodel.isNothing())
+                return raise(new Error(
+                    `getModel(): No model found for "${modelName}"!`
+                ));
+
+            return pure(mmodel.get());
         });
     }
 
     create(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forCreate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -313,7 +245,7 @@ export abstract class ApiController<C> implements Resource {
     search(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forSearch(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -327,7 +259,7 @@ export abstract class ApiController<C> implements Resource {
     update(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forUpdate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -349,7 +281,7 @@ export abstract class ApiController<C> implements Resource {
     get(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -367,7 +299,7 @@ export abstract class ApiController<C> implements Resource {
     remove(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();

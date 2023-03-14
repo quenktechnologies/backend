@@ -13,9 +13,15 @@ import { Action, Api } from '@quenk/tendril/lib/app/api';
 
 import {
     ApiController,
-    ModelProvider
 } from '../../../../lib/app/controllers/api';
-import { Id, SearchParams, Model } from '../../../../lib/app/model';
+import {
+    Id,
+    SearchParams,
+    Model,
+    UpdateParams,
+    GetParams,
+    ModelProvider
+} from '../../../../lib/app/model';
 import {
     PagedSearchParams,
     SearchStrategy
@@ -29,7 +35,7 @@ export class MockModel implements Model<Object> {
     constructor(
         public connection: { id: string } = { id: 'main' },
         public name = 'user'
-    ) {}
+    ) { }
 
     MOCK = new Mock();
 
@@ -42,29 +48,41 @@ export class MockModel implements Model<Object> {
         return this.MOCK.invoke('create', [data], pure(<Id>1));
     }
 
-    createAll(data: Object[]): Future<Id[]> {
-        return this.MOCK.invoke('createAll', [data], pure(<Id[]>[]));
+    count(qry: SearchParams): Future<number> {
+        /*    let results = this.data.filter(rec => {
+                if (qry.filters.id) return rec.id === qry.filters.id;
+    
+                if (qry.filters.name) return rec.name === qry.filters.name;
+    
+                return true;
+            });
+
+        return this.MOCK.invoke('count', [qry], pure(results.length));
+        */
+        return this.MOCK.invoke('count', [qry], pure(0));
     }
 
     search(qry: SearchParams): Future<Object[]> {
-        let results = this.data.filter((rec, idx) => {
-            if (
-                (qry.offset && idx + 1 < qry.offset) ||
-                (qry.limit && idx + 1 >= qry.limit)
-            )
-                return false;
-
-            if (qry.filters.id) return rec.id === qry.filters.id;
-
-            if (qry.filters.name) return rec.name === qry.filters.name;
-
-            return true;
-        });
-
-        return this.MOCK.invoke('search', [qry], pure(results));
+        /* let results = this.data.filter((rec, idx) => {
+             if (
+                 (qry.offset && idx + 1 < qry.offset) ||
+                 (qry.limit && idx + 1 >= qry.limit)
+             )
+                 return false;
+ 
+             if (qry.filters.id) return rec.id === qry.filters.id;
+ 
+             if (qry.filters.name) return rec.name === qry.filters.name;
+ 
+             return true;
+         });
+ 
+         return this.MOCK.invoke('search', [qry], pure(results));
+         */
+        return this.MOCK.invoke('search', [qry], pure([]));
     }
 
-    update(id: Id, changes: object, qry?: object): Future<boolean> {
+    update(id: Id, changes: object, qry?: UpdateParams): Future<boolean> {
         return this.MOCK.invoke(
             'update',
             [id, changes, qry],
@@ -72,29 +90,18 @@ export class MockModel implements Model<Object> {
         );
     }
 
-    get(id: Id, qry?: object): Future<Maybe<Object>> {
+    get(id: Id, qry?: GetParams): Future<Maybe<Object>> {
         return this.MOCK.invoke('get', [id, qry], pure(just({ name: 'adom' })));
     }
 
-    remove(id: Id, qry?: object): Future<boolean> {
+    remove(id: Id, qry?: UpdateParams): Future<boolean> {
         return this.MOCK.invoke('remove', [id, qry], pure(<boolean>true));
     }
 
-    count(qry: SearchParams): Future<number> {
-        let results = this.data.filter(rec => {
-            if (qry.filters.id) return rec.id === qry.filters.id;
-
-            if (qry.filters.name) return rec.name === qry.filters.name;
-
-            return true;
-        });
-
-        return this.MOCK.invoke('count', [qry], pure(results.length));
-    }
 }
 
 export class TestModelProvider
-    implements ModelProvider<Object, { id: string }>
+    implements ModelProvider<{ id: string }, Object>
 {
     MOCK = new Mock();
 
@@ -105,7 +112,7 @@ export class TestModelProvider
 
         this.model = model;
 
-        return this.MOCK.invoke('getInstance', [conn, name], model);
+        return this.MOCK.invoke('getInstance', [conn, name], just(model));
     }
 }
 
@@ -164,7 +171,7 @@ export class TestResource extends ApiController<object> {
 }
 
 export class TestContext {
-    constructor(public req: object) {}
+    constructor(public req: object) { }
 
     MOCK = new Mock();
 
@@ -206,7 +213,7 @@ export class TestContext {
         }
     };
 
-    onError = () => {};
+    onError = () => { };
 
     filters = [];
 
@@ -228,7 +235,7 @@ export class TestContext {
 }
 
 export class TestConnection {
-    constructor(public name: string) {}
+    constructor(public name: string) { }
 
     open() {
         return voidPure;

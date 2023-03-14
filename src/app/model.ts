@@ -3,7 +3,7 @@
  */
 
 import { Future } from '@quenk/noni/lib/control/monad/future';
-import { Maybe } from '@quenk/noni/lib/data/maybe';
+import { fromNullable, Maybe } from '@quenk/noni/lib/data/maybe';
 import { Record } from '@quenk/noni/lib/data/record';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 
@@ -79,7 +79,7 @@ export interface SearchParams extends GetParams {
 }
 
 /**
- * UpdateParams serve as additonal query parameters to a Model's update()
+ * UpdateParams serve as additional query parameters to a Model's update()
  * method.
  */
 export interface UpdateParams {
@@ -143,4 +143,56 @@ export interface Model<T extends Object> {
      *                   that may be used to further filter the removed document.
      */
     remove(id: Id, params?: UpdateParams): Future<boolean>;
+}
+
+/**
+ * ModelName type.
+ */
+export type ModelName = string;
+
+/**
+ * ModelGetter is a function that provides an instance of a Model given its
+ * underlying connection.
+ */
+export type ModelGetter<C, T extends Object> = (db: C) => Model<T>
+
+/**
+ * ModelMap is a record of identifying names to Models.
+ */
+export interface ModelMap<C, T extends Object> {
+
+    [key: string]: ModelGetter<C, T>
+
+}
+
+/**
+ * ModelProvider provides model instances by name.
+ *
+ * @typeParam T - The data type of the model.
+ * @typeParam C - The underlying connection.
+ */
+export interface ModelProvider<C, T extends Object> {
+    /**
+     * getInstance provides the model instance.
+     *
+     * @param conn - The connection instance used to create the model.
+     * @param name - The name of the model to produce.
+     */
+    getInstance(conn: C, name: string): Maybe<Model<T>>;
+}
+
+/**
+ * MapModelProvider generates model instances from the provided record map.
+ */
+export class MapModelProvider<C, T extends Object> {
+
+    constructor(public models: ModelMap<C, T> = {}) { }
+
+    getInstance(conn: C, name: ModelName): Maybe<Model<T>> {
+
+        return fromNullable(this.models[name])
+            .map(getter => getter(conn));
+
+    }
+
 }

@@ -126,7 +126,7 @@ export const doTest = (conf: TestConf) =>
                 throw new Error(`Bad method: "${method}"`);
         }
 
-        yield ctx.runAction(action);
+        yield ctx.run(action);
 
         if (expect) {
             for (let [name, args] of Object.entries(expect.model || {})) {
