@@ -10,7 +10,7 @@ private Node.js projects.
 # Installation
 
 ``sh 
-npm install --save @quenk/server
+npm install --save @quenk/backend
 ``
 
 # Usage
