@@ -144,9 +144,9 @@ class Preconditions {
 }
 
 /**
- * ApiController provides a base class for CSUGR operations.
+ * ApiController provides a class for CSUGR operations.
  *
- * This class is meant to be extended to be specialized to the particular
+ * This class can be extended to be specialized to the particular
  * underlying database platform by providing a specialized ModelProvider
  * instance.
  *
@@ -180,7 +180,7 @@ class Preconditions {
  *
  * @typeParam C - The connection type the controller uses.
  */
-export abstract class ApiController<C> implements Resource {
+export class ApiController<C> implements Resource {
     /**
      * @param conn        - This id of the pooled connection that will be
      *                      checked out before each operation.
