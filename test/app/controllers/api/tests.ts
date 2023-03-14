@@ -7,7 +7,7 @@ import { doFuture, pure, Future } from '@quenk/noni/lib/control/monad/future';
 import { Type } from '@quenk/noni/lib/data/type';
 
 import { PartialRequest } from '@quenk/tendril/lib/app/api/request';
-import { Api, Action } from '@quenk/tendril/lib/app/api';
+import { Action } from '@quenk/tendril/lib/app/api';
 
 import {
     KEY_CONNECTION,
@@ -48,11 +48,6 @@ interface TestConf {
 
     test?: TestHook;
 }
-
-export const noop = () => pure(<void>undefined);
-
-export const exec = (ctx: TestContext) => (next: Api<Type>) =>
-    next.exec(<Type>ctx);
 
 const methodMap: { [key: string]: string } = {
     create: 'post',
@@ -131,7 +126,7 @@ export const doTest = (conf: TestConf) =>
                 throw new Error(`Bad method: "${method}"`);
         }
 
-        yield action.foldM(noop, exec(ctx));
+        yield ctx.runAction(action);
 
         if (expect) {
             for (let [name, args] of Object.entries(expect.model || {})) {

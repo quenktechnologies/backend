@@ -6,7 +6,6 @@ import {
 } from '@quenk/noni/lib/control/monad/future';
 import { Either, left, right } from '@quenk/noni/lib/data/either';
 import { empty } from '@quenk/noni/lib/data/record';
-import { flatten } from '@quenk/noni/lib/data/record/path';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { isObject } from '@quenk/noni/lib/data/type';
 
@@ -271,7 +270,7 @@ export abstract class ApiController<C> implements Resource {
         public conn: string,
         public models: ModelProvider<Object, C>,
         public strategy: SearchStrategy
-    ) {}
+    ) { }
 
     /**
      * @internal
@@ -279,7 +278,7 @@ export abstract class ApiController<C> implements Resource {
     getModel(req: Request): Future<Model<Object>> {
         let that = this;
 
-        return doFuture(function* () {
+        return doFuture(function*() {
             let name = String(req.prs.getOrElse(KEY_CONNECTION, 'main'));
 
             let mconn = yield getUserConnection(name);
@@ -298,7 +297,7 @@ export abstract class ApiController<C> implements Resource {
     create(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forCreate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -314,7 +313,7 @@ export abstract class ApiController<C> implements Resource {
     search(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forSearch(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -328,7 +327,7 @@ export abstract class ApiController<C> implements Resource {
     update(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forUpdate(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -340,7 +339,7 @@ export abstract class ApiController<C> implements Resource {
             let query = Preconditions.isValidQuery(req) ? req.query : {};
 
             let yes = yield fork(
-                model.update(req.params.id, flatten(<Object>req.body), query)
+                model.update(req.params.id, <Object>req.body, query)
             );
 
             return yes ? ok() : notFound();
@@ -350,7 +349,7 @@ export abstract class ApiController<C> implements Resource {
     get(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();
@@ -368,7 +367,7 @@ export abstract class ApiController<C> implements Resource {
     remove(req: Request): Action<void> {
         let that = this;
 
-        return doAction(function* () {
+        return doAction(function*() {
             let checked = Preconditions.forGet(req);
 
             if (checked.isLeft()) return checked.takeLeft();

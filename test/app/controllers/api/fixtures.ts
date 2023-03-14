@@ -1,13 +1,15 @@
 import { Mock } from '@quenk/test/lib/mock';
 
-import { pure, voidPure, Future } from '@quenk/noni/lib/control/monad/future';
+import { Future, pure, voidPure } from '@quenk/noni/lib/control/monad/future';
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Type } from '@quenk/noni/lib/data/type';
 import { Maybe, just } from '@quenk/noni/lib/data/maybe';
 import { pure as freePure } from '@quenk/noni/lib/control/monad/free';
-
 import { make } from '@quenk/noni/lib/data/array';
+
 import { Request, ClientRequest } from '@quenk/tendril/lib/app/api/request';
+import { noop } from '@quenk/tendril/lib/app/api/control';
+import { Action, Api } from '@quenk/tendril/lib/app/api';
 
 import {
     ApiController,
@@ -164,6 +166,8 @@ export class TestResource extends ApiController<object> {
 export class TestContext {
     constructor(public req: object) {}
 
+    MOCK = new Mock();
+
     module = {
         app: {
             pool: {
@@ -206,10 +210,20 @@ export class TestContext {
 
     filters = [];
 
+    next() {
+        return this.MOCK.invoke('next', [], pure(noop()));
+    }
+
     abort() {
         this.filters = [];
+        return this.MOCK.invoke('abort', [], pure(freePure(<Type>undefined)));
+    }
 
-        return pure(freePure(<Type>undefined));
+    run(action: Action<Type>): Future<void> {
+        return action.foldM(
+            () => pure(<void>undefined),
+            (next: Api<Type>) => next.exec(<Type>this)
+        );
     }
 }
 
