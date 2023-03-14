@@ -13,12 +13,12 @@ import {
 } from '@quenk/noni/lib/control/monad/future';
 import { Maybe } from '@quenk/noni/lib/data/maybe';
 import { Object } from '@quenk/noni/lib/data/jsonx';
-import { empty, mapTo, rmerge } from '@quenk/noni/lib/data/record';
+import { empty, merge } from '@quenk/noni/lib/data/record';
+import { flatten } from '@quenk/noni/lib/data/record/path';
 
-import { Id, Count, Model } from '../../model';
+import { Id, Model, SearchParams, GetParams, UpdateParams } from '../../model';
 
 const ERR_CREATE_NO_ID = 'create(): could not retrieve id for target document!';
-const ERR_CREATE_MANY_ID = 'createMany(): some documents returned no id!';
 
 /**
  * CollectionName is the name of a collection.
@@ -46,47 +46,6 @@ export interface MongoModel<T extends Object> extends Model<T> {
     collection: mongo.Collection;
 
     /**
-     * createMany attempts to create multiple documents in one go.
-     *
-     * This operation is not expected to be atomic and should be used with care.
-     *
-     * @param data - A list of documents to create.
-     */
-    createMany(data: T[]): Future<Id[]>;
-
-    /**
-     * updateMany updates multiple documents in the collection.
-     *
-     * This uses the $set operation but enables the "multi" flag by default.
-     *
-     * @param qry      - The query to use to select the documents.
-     * @param changes  - The changes to apply in a $set update.
-     * @param opts     - Optional options passed to the driver.
-     */
-    updateMany(qry: object, changes: object, opts?: object): Future<Count>;
-
-    /**
-     * unsafeUpdate allows for an update command to be executed using a
-     * custom query and update operator(s).
-     *
-     * Care should be taken when using this method as one can easily
-     * accidentally overwrite data!
-     *
-     * @param qry      - The query to use to select the documents.
-     * @param spec     - The raw update operation object.
-     * @param opts     - Optional options passed to the driver.
-     */
-    unsafeUpdate(qry: object, spec: object, opts?: object): Future<Count>;
-
-    /**
-     * removeMany documents in the collection that match the query.
-     *
-     * @param qry  - The query to use to select the documents.
-     * @param opts - Optional options passed to the driver.
-     */
-    removeMany(qry: object, opts?: object): Future<Count>;
-
-    /**
      * aggregate runs an aggregation pipeline against documents
      * in the collection.
      *
@@ -105,14 +64,14 @@ export abstract class BaseModel<T extends Object> implements MongoModel<T> {
     constructor(
         public database: mongo.Db,
         public collection: mongo.Collection
-    ) {}
+    ) { }
 
     id = 'id';
 
     create(data: T): Future<Id> {
         let that = this;
 
-        return doFuture<Id>(function* () {
+        return doFuture<Id>(function*() {
             let result = yield noniMongo.insertOne(that.collection, data);
 
             let qry = { _id: result.insertedId };
@@ -125,86 +84,66 @@ export abstract class BaseModel<T extends Object> implements MongoModel<T> {
         });
     }
 
-    createMany(data: T[]): Future<Id[]> {
-        let that = this;
-
-        return doFuture<Id[]>(function* () {
-            let result = yield noniMongo.insertMany(that.collection, data);
-
-            let qry = { _id: { $in: mapTo(result.insertedIds, id => id) } };
-
-            let opts = { projection: { [that.id]: 1 } };
-
-            let results = yield noniMongo.find(that.collection, qry, opts);
-
-            if (results.length !== data.length)
-                return raise<Id[]>(new Error(ERR_CREATE_MANY_ID));
-
-            return pure(results.map((r: Object) => <Id>r[that.id]));
+    count(params: SearchParams): Future<number> {
+        let {
+            filters = {},
+            offset,
+            limit,
+        } = params;
+        return noniMongo.count(this.collection, filters, {
+            limit,
+            skip: offset,
         });
     }
 
-    search(qry: object, opts?: object): Future<T[]> {
-        let actualOpts = rmerge({ projection: { _id: false } }, <Object>opts);
-
-        return noniMongo.find(this.collection, qry, actualOpts);
+    search(params: SearchParams): Future<T[]> {
+        let {
+            filters = {},
+            offset,
+            limit,
+            sort,
+            fields
+        } = params;
+        return noniMongo.find(this.collection, filters, {
+            projection: merge({ _id: false }, fields || {}),
+            limit,
+            skip: offset,
+            sort
+        });
     }
 
     update(
         id: Id,
-        changes: object,
-        qry?: object,
-        opts?: object
+        changes: Object,
+        params?: UpdateParams,
     ): Future<boolean> {
-        let spec = { $set: changes };
-
-        let actualQry = getIdQry(this, id, qry || {});
+        let actualQry = getIdQry(this, id, params && params.filters || {});
 
         return noniMongo
-            .updateOne(this.collection, actualQry, spec, opts)
+            .updateOne(this.collection, actualQry, { $set: flatten(changes) })
             .map(result => result.matchedCount > 0);
     }
 
-    updateMany(qry: object, changes: object, opts?: object): Future<number> {
-        let { collection } = this;
-
-        return noniMongo
-            .updateMany(collection, qry, { $set: changes }, opts)
-            .map(result => result.matchedCount);
-    }
-
-    unsafeUpdate(qry: object, spec: object, opts?: object): Future<number> {
-        let { collection } = this;
-
-        return noniMongo
-            .updateMany(collection, qry, spec, opts)
-            .map(result => result.matchedCount);
-    }
-
-    get(id: Id, qry?: object, opts?: object): Future<Maybe<T>> {
+    get(id: Id, params?: GetParams): Future<Maybe<T>> {
         let that = this;
 
-        let actualQry = getIdQry(this, id, qry || {});
+        let { filters = {}, fields = {} } = params || {};
 
-        return noniMongo.findOne(that.collection, actualQry, opts);
+        let qry = getIdQry(this, id, filters);
+
+        return noniMongo.findOne(that.collection, qry, {
+            projection: merge({ _id: false }, fields)
+        });
     }
 
-    remove(id: Id, qry?: object, opts?: object): Future<boolean> {
-        let actualQry = getIdQry(this, id, qry || {});
+    remove(id: Id, params?: UpdateParams): Future<boolean> {
+        let { filters = {} } = params || {};
+
+        let qry = getIdQry(this, id, filters);
 
         return noniMongo
-            .deleteOne(this.collection, actualQry, opts)
+            .deleteOne(this.collection, qry)
             .map(result => result.deletedCount > 0);
-    }
-
-    removeMany(qry: object, opts?: object): Future<number> {
-        return noniMongo
-            .deleteMany(this.collection, qry, opts)
-            .map(r => <number>r.deletedCount);
-    }
-
-    count(qry: object): Future<number> {
-        return noniMongo.count(this.collection, qry);
     }
 
     aggregate(pipeline: object[], opts?: object): Future<Object[]> {
