@@ -27,8 +27,8 @@ import { SearchStrategy } from './search/strategy';
 
 export const KEY_PARSERS_BODY = 'qtl.parsers.body';
 export const KEY_PARSERS_QUERY = 'qtl.parsers.query';
-export const KEY_CONNECTION = 'qtl.connection';
-export const KEY_MODEL_NAME = 'qtl.model';
+export const KEY_CONNECTION = 'tags.connection';
+export const KEY_MODEL_NAME = 'tags.model';
 
 export const ERR_PAYLOAD_INVALID = 'payload invalid';
 export const ERR_PARSERS_BODY = 'body not parsed safely';
