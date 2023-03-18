@@ -10,7 +10,8 @@ import {
     CompileQueryTagConf,
     compileSearchTag,
     CompileSearchTagConf,
-    DEFAULT_PAGE_SIZE
+    DEFAULT_PAGE_SIZE,
+    unsupportedMethods
 } from '../../../../../lib/app/db/mongodb/filters/query';
 
 import { TestContext } from '../../../controllers/api/fixtures';
@@ -28,6 +29,8 @@ interface TestConf {
     method: string;
 
     tags: Object;
+
+    verb?: string;
 
     query: object;
 
@@ -49,10 +52,14 @@ interface TestConf {
 const defaultConf = { tags: {}, query: {}, prs: {}, args: {}, expect: {} };
 
 const doTest = async (conf: Partial<TestConf>) => {
-    let { method, tags, query, prs, args, expect } = merge(defaultConf, conf);
+    let { method, tags, verb, query, prs, args, expect } = merge(
+        defaultConf,
+        conf
+    );
 
     let ctx = new TestContext({
         query,
+        method: verb ? verb : '',
         prsData: unflatten(<Object>prs),
         routeConf: {
             method: 'get',
@@ -223,6 +230,25 @@ describe('query', () => {
                     context: { next: [] }
                 }
             }));
+
+        it('should not run for unsupported request methods', async () => {
+            for (let verb of unsupportedMethods)
+                await doTest({
+                    tags: { query: 'name:attiba', model: 'customer' },
+                    args,
+                    verb,
+                    expect: {
+                        query: {},
+                        prs: {
+                            [KEY_PARSERS_QUERY]: undefined
+                        },
+                        response: {
+                            status: false
+                        },
+                        context: { next: [] }
+                    }
+                });
+        });
 
         it('should abort if model is omitted', () =>
             doTest({
@@ -414,6 +440,27 @@ describe('query', () => {
                 }
             }));
 
+        it('should not run for unsupported request methods', async () => {
+            for (let verb of unsupportedMethods)
+                await doTest({
+                    method: 'search',
+                    query,
+                    verb,
+                    tags: { search: 'customer' },
+                    args,
+                    expect: {
+                        query,
+                        prs: {
+                            [KEY_PARSERS_QUERY]: undefined
+                        },
+                        response: {
+                            status: false
+                        },
+                        context: { next: [] }
+                    }
+                });
+        });
+
         it('should abort if no pointer', () =>
             doTest({
                 method: 'search',
@@ -576,6 +623,27 @@ describe('query', () => {
                     context: { next: [] }
                 }
             }));
+
+        it('should not run for unsupported request methods', async () => {
+            for (let verb of unsupportedMethods)
+                await doTest({
+                    method: 'get',
+                    query: { fields: 'unsafe', filters: {} },
+                    verb,
+                    tags: { get: 'customer' },
+                    args,
+                    expect: {
+                        query: { fields: 'unsafe', filters: {} },
+                        prs: {
+                            [KEY_PARSERS_QUERY]: undefined
+                        },
+                        response: {
+                            status: false
+                        },
+                        context: { next: [] }
+                    }
+                });
+        });
 
         it('should abort if no pointer', () =>
             doTest({

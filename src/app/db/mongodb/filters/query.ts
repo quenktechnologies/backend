@@ -35,6 +35,11 @@ export interface CompileQueryTagConf {
     policiesAvailable: PoliciesAvailable;
 }
 
+export const unsupportedMethods = ['CONNECT', 'OPTIONS', 'TRACE'];
+
+const isUnsupported = (req: Request) =>
+    unsupportedMethods.includes(req.method.toUpperCase());
+
 /**
  * compileQueryTag treats the value of the "query" tag as a search-filters
  * string to compile into a mongodb query filter.
@@ -56,6 +61,8 @@ export const compileQueryTag = (conf: Partial<CompileQueryTagConf>) => {
 
     return (req: Request): Action<void> =>
         doAction(function* () {
+            if (isUnsupported(req)) return next(req);
+
             let str = <string>req.route.tags.query;
 
             if (!isString(str)) return next(req);
@@ -161,7 +168,7 @@ export const compileSearchTag = (conf: Partial<CompileSearchTagConf>) => {
 
     return (req: Request): Action<void> => {
         return doAction(function* () {
-            if (!req.route.tags.search) return next(req);
+            if (isUnsupported(req) || !req.route.tags.search) return next(req);
 
             let ptr = isString(req.route.tags.search)
                 ? req.route.tags.search
@@ -236,7 +243,7 @@ export const compileGetTag =
     (fieldsAvailable: Record<FieldSet>) =>
     (req: Request): Action<void> => {
         return doAction(function* () {
-            if (!req.route.tags.get) return next(req);
+            if (isUnsupported(req) || !req.route.tags.get) return next(req);
 
             let ptr = isString(req.route.tags.get)
                 ? req.route.tags.get
