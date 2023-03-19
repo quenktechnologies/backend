@@ -7,6 +7,8 @@ import { fork, abort, next } from '@quenk/tendril/lib/app/api/control';
 
 import { Precondition } from '@quenk/preconditions/lib/async';
 
+import { KEY_PARSERS_BODY } from '../../controllers/api';
+
 /**
  * Checks map.
  */
@@ -47,6 +49,8 @@ export const checkBody =
             }
 
             req.body = eresult.takeRight();
+
+            req.prs.set(KEY_PARSERS_BODY, true);
 
             return next(req);
         });
