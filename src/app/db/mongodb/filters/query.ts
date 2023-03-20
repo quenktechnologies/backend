@@ -19,6 +19,8 @@ import { mkCtx } from '../../../filters/shape';
 import { Count, FieldSet } from '../../../model';
 
 export const DEFAULT_PAGE_SIZE = 100;
+export const PRS_FILTERS_ALLOW_EMPTY = 'qtl.filters.allowEmpty';
+export const TAG_FILTERS_ALLOW_EMPTY = 'tags.allowEmptyFilters';
 
 /**
  * CompileQueryTagConf is the configuration interface for compileQueryTag().
@@ -199,18 +201,32 @@ export const compileSearchTag = (conf: Partial<CompileSearchTagConf>) => {
 
             let str = <string>req.query[filterKey] || '';
 
-            let mQuery = compileFilter(mfc, policy, str);
+            let filters = {};
 
-            if (mQuery.isLeft()) {
-                yield badRequest({ error: 'ERR_SEARCH_FILTER_PARSER' });
+            if (str !== '') {
+                let mQuery = compileFilter(mfc, policy, str);
 
-                if (process.env.QTL_LOG_SEARCH_FILTER_PARSE_ERROR)
-                    console.error(mQuery.takeLeft());
+                if (mQuery.isLeft()) {
+                    yield badRequest({ error: 'ERR_SEARCH_FILTER_PARSER' });
+
+                    if (process.env.QTL_LOG_SEARCH_FILTER_PARSE_ERROR)
+                        console.error(mQuery.takeLeft());
+
+                    return abort();
+                }
+
+                filters = <Object>mQuery.takeRight();
+            } else if (
+                !(
+                    process.env.QTL_FILTERS_ALLOW_EMPTY ||
+                    req.prs.getOrElse(TAG_FILTERS_ALLOW_EMPTY, false) ||
+                    req.prs.getOrElse(PRS_FILTERS_ALLOW_EMPTY, false)
+                )
+            ) {
+                yield badRequest({ error: 'ERR_SEARCH_FILTER_EMPY' });
 
                 return abort();
             }
-
-            let filters = mQuery.takeRight();
 
             let fields = <Object>fieldsAvailable[ptr];
 

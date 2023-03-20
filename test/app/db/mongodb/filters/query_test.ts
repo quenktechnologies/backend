@@ -2,6 +2,11 @@ import { assert } from '@quenk/test/lib/assert';
 
 import { Object } from '@quenk/noni/lib/data/jsonx';
 import { Record } from '@quenk/noni/lib/data/record';
+import { Type } from '@quenk/noni/lib/data/type';
+import { unflatten } from '@quenk/noni/lib/data/record/path';
+import { merge } from '@quenk/noni/lib/data/record';
+
+import { Action } from '@quenk/tendril/lib/app/api';
 
 import { KEY_PARSERS_QUERY } from '../../../../../lib/app/controllers/api';
 import {
@@ -11,16 +16,14 @@ import {
     compileSearchTag,
     CompileSearchTagConf,
     DEFAULT_PAGE_SIZE,
+    PRS_FILTERS_ALLOW_EMPTY,
+    TAG_FILTERS_ALLOW_EMPTY,
     unsupportedMethods
 } from '../../../../../lib/app/db/mongodb/filters/query';
 
 import { TestContext } from '../../../controllers/api/fixtures';
-import { merge } from '@quenk/noni/lib/data/record';
-import { Action } from '@quenk/tendril/lib/app/api';
 import { PoliciesAvailable } from '../../../../../lib/app/db/search';
 import { FieldSet } from '../../../../../lib/app/model';
-import { Type } from '@quenk/noni/lib/data/type';
-import { unflatten } from '@quenk/noni/lib/data/record/path';
 
 process.env.TENDRIL_SEND_500_ERRORS = 'yes';
 process.env.TENDRIL_DISABLE_500_ERROR_LOG = 'yes';
@@ -301,6 +304,10 @@ describe('query', () => {
     });
 
     describe('compileSearchTag', () => {
+        afterEach(() => {
+            delete process.env.QTL_FILTERS_ALLOW_EMPTY;
+        });
+
         let query = {
             qry: 'name:justin',
             page: 1,
@@ -565,6 +572,93 @@ describe('query', () => {
                     }
                 }
             }));
+
+        it('should send 400 when query is empty by default', () =>
+            doTest({
+                method: 'search',
+                query: { q: '' },
+                tags: { search: 'user' },
+                args: {
+                    policiesAvailable: { user: { age: 'number' } },
+                    fieldsAvailable: { user: { age: 1 } }
+                },
+                expect: {
+                    query: { q: '' },
+                    prs: {
+                        [KEY_PARSERS_QUERY]: undefined
+                    },
+                    response: {
+                        status: [400]
+                    }
+                }
+            }));
+
+        it('should allow empty filters when QTL_FILTERS_ALLOW_EMPTY set', () => {
+            process.env.QTL_FILTERS_ALLOW_EMPTY = 'yes';
+
+            return doTest({
+                method: 'search',
+                query: { q: '' },
+                tags: { search: 'user' },
+                args: {
+                    policiesAvailable: { user: { age: 'number' } },
+                    fieldsAvailable: { user: { age: 1 } }
+                },
+                expect: {
+                    query: {
+                        filters: {},
+                        page: 1,
+                        perPage: 100,
+                        sort: {},
+                        fields: { age: 1 }
+                    },
+                    prs: {
+                        [KEY_PARSERS_QUERY]: true
+                    },
+                    response: {
+                        status: false
+                    },
+                    context: {
+                        next: []
+                    }
+                }
+            });
+        });
+
+        it('should allow empty filters when the correct prs tag is set', async () => {
+            for (let prs of [
+                { [PRS_FILTERS_ALLOW_EMPTY]: true },
+                { [TAG_FILTERS_ALLOW_EMPTY]: true }
+            ])
+                await doTest({
+                    method: 'search',
+                    query: { q: '' },
+                    tags: { search: 'user' },
+                    prs,
+                    args: {
+                        policiesAvailable: { user: { age: 'number' } },
+                        fieldsAvailable: { user: { age: 1 } }
+                    },
+                    expect: {
+                        query: {
+                            filters: {},
+                            page: 1,
+                            perPage: 100,
+                            sort: {},
+                            fields: { age: 1 }
+                        },
+                        prs: {
+                            [KEY_PARSERS_QUERY]: true
+                        },
+                        response: {
+                            status: false
+                        },
+                        context: {
+                            next: []
+                        }
+                    }
+                });
+        });
     });
 
     describe('compileGetTag', () => {
