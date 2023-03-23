@@ -1,105 +1,47 @@
-import * as bcryptjs from 'bcryptjs';
-import * as mongodb from 'mongodb';
+import * as encrypt from 'bcryptjs';
 
-import { Object, Value } from '@quenk/noni/lib/data/jsonx';
+import { Value } from '@quenk/noni/lib/data/jsonx';
 import {
-    Future,
+    doFuture,
     fromCallback,
+    Future,
     pure
 } from '@quenk/noni/lib/control/monad/future';
-import { DoFn, doN } from '@quenk/noni/lib/control/monad';
-import { unsafeGet } from '@quenk/noni/lib/data/record/path';
 import { generateV4 } from '@quenk/noni/lib/crypto/uuid';
 
-import { getInstance } from '@quenk/tendril/lib/app/connection';
-
-import {
-    Result as SResult,
-    succeed,
-    fail
-} from '@quenk/preconditions/lib/result';
+import { Result, succeed } from '@quenk/preconditions/lib/result';
 import { Precondition } from '@quenk/preconditions/lib/async';
 
-import {
-    findOneAndUpdate,
-    count
-} from '@quenk/noni-mongodb/lib/database/collection';
-
-export type Result<A, B> = Future<SResult<A, B>>;
-
-export const COUNTERS_ID = 'counters';
+/**
+ * AsyncResult is a precondition result derrived from an async operation.
+ */
+export type AsyncResult<A, B> = Future<Result<A, B>>;
 
 /**
- * bcrypt
+ * uuid generates a v4 uuid.
  */
-export const bcrypt = (str: Value): Result<Value, Value> =>
-    doN(<DoFn<SResult<Value, Value>, Result<Value, Value>>>function* () {
-        let salty = yield salt();
-        let salted = yield hash(String(str), salty);
-        return pure(succeed(salted));
-    });
-
-const salt = (): Future<string> => fromCallback(cb => bcryptjs.genSalt(12, cb));
-
-const hash = (str: string, salt: string) =>
-    fromCallback(cb => bcryptjs.hash(str, salt, cb));
-
-/**
- * unique fails if the value specified for the field is already stored in the
- * database.
- */
-export const unique =
-    <A>(collection: string, field: string, dbid = 'main') =>
-    (value: A): Result<A, A> =>
-        doN(<DoFn<SResult<A, A>, Result<A, A>>>function* () {
-            let db = yield getMain(dbid);
-
-            let n = yield count(db.collection(collection), {
-                [field]: value
-            });
-
-            return pure(
-                n > 0
-                    ? fail<A, A>('unique', value, { value })
-                    : succeed<A, A>(value)
-            );
-        });
-
-/**
- * id generates the id number for a record.
- */
-export const id: Precondition<Value, Value> = () =>
+export const uuid: Precondition<Value, Value> = () =>
     pure(succeed(<Value>generateV4(true)));
 
 /**
- * inc increments a counter stored in the database returning the value.
- *
- * This is used mostly for generationg sequential ids.
- *
- * Note: This was previously used at the field level but that wastes ids when
- * other checks fail. Instead, it now expects the whole object and will assign
- * the value to the property directly.
+ * Salt for the bcrypt process.
  */
-export const inc =
-    <T extends Object>(counter: string, propName = 'id', dbid = 'main') =>
-    (value: T): Result<T, T> =>
-        doN(<DoFn<SResult<T, T>, Result<T, T>>>function* () {
-            let db = yield getMain(dbid);
+export type Salt = string;
 
-            let target = db.collection('counters');
+/**
+ * bcrypt hashes a string to make it suitable to store sensitive data such as
+ * passwords which need to be verified but not read back.
+ */
+export const password = (value: Value): AsyncResult<Value, Value> =>
+    doFuture(function* () {
+        let s = yield salt();
 
-            let filter = { id: COUNTERS_ID };
+        let v = yield hash(s, <string>value);
 
-            let update = { $inc: { [counter]: 1 } };
+        return pure(succeed<Value, Value>(v));
+    });
 
-            let opts = { returnDocument: 'after', upsert: true };
+const salt = (): Future<Salt> => fromCallback(cb => encrypt.genSalt(12, cb));
 
-            let mresult = yield findOneAndUpdate(target, filter, update, opts);
-
-            (<Object>value)[propName] = unsafeGet(counter, mresult.get());
-
-            return pure(succeed(value));
-        });
-
-const getMain = (id: string): Future<mongodb.Db> =>
-    getInstance().get(id).get().checkout();
+const hash = (salt: Salt, s: string) =>
+    fromCallback(cb => encrypt.hash(s, salt, cb));
