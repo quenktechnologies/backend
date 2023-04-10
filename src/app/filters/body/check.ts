@@ -9,6 +9,8 @@ import { Precondition } from '@quenk/preconditions/lib/async';
 
 import { KEY_PARSERS_BODY } from '../../controllers/api';
 
+export const TAG_BODY_CHECK = 'tags.checkBody';
+
 /**
  * Checks map.
  */
@@ -30,7 +32,11 @@ export const checkBody =
     (full: Checks, partial: Checks, messages: object = {}) =>
     (req: Request): Action<void> =>
         doAction(function* () {
-            if (!supportedMethods.includes(req.method)) return next(req);
+            if (
+                !supportedMethods.includes(req.method) ||
+                req.prs.getOrElse(TAG_BODY_CHECK, false)
+            )
+                return next(req);
 
             let ptr = <string>req.route.tags.model;
 

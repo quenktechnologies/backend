@@ -223,7 +223,7 @@ export const compileSearchTag = (conf: Partial<CompileSearchTagConf>) => {
                     req.prs.getOrElse(PRS_FILTERS_ALLOW_EMPTY, false)
                 )
             ) {
-                yield badRequest({ error: 'ERR_SEARCH_FILTER_EMPY' });
+                yield badRequest({ error: 'ERR_SEARCH_FILTER_EMPTY' });
 
                 return abort();
             }
