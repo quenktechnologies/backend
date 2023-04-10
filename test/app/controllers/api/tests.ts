@@ -10,7 +10,7 @@ import { PartialRequest } from '@quenk/tendril/lib/app/api/request';
 import { Action } from '@quenk/tendril/lib/app/api';
 
 import {
-    KEY_CONNECTION,
+    TAG_CONNECTION,
     KEY_PARSERS_BODY,
     KEY_PARSERS_QUERY
 } from '../../../../lib/app/controllers/api';
@@ -90,7 +90,7 @@ export const doTest = (conf: TestConf) =>
                 method: methodMap[method],
                 path: '/',
                 filters: [],
-                tags: unflatten({ [KEY_CONNECTION]: connectionOverride })
+                tags: unflatten({ [TAG_CONNECTION]: connectionOverride })
             };
 
         let ctx = new TestContext(context);

@@ -68,7 +68,7 @@ describe('api', () => {
                     }
                 }));
 
-            it('should honour QTL_API_CONTROLLER_SKIP_PARSER_CHECKS', () =>
+            it('should honour the connection override', () =>
                 tests.doTest({
                     method: 'create',
                     attest: { body: true },
@@ -83,7 +83,7 @@ describe('api', () => {
                     }
                 }));
 
-            it('should honour the connection override', () =>
+            it('should honour QTL_API_CONTROLLER_SKIP_PARSER_CHECKS', () =>
                 tests.doTest({
                     method: 'create',
                     skipParsers: true,

@@ -27,8 +27,12 @@ import { SearchStrategy } from './search/strategy';
 
 export const KEY_PARSERS_BODY = 'qtl.parsers.body';
 export const KEY_PARSERS_QUERY = 'qtl.parsers.query';
-export const KEY_CONNECTION = 'tags.connection';
-export const KEY_MODEL_NAME = 'tags.model';
+
+export const TAG_CONNECTION = 'connection';
+export const TAG_MODEL_NAME = 'model';
+
+export const PRS_CONNECTION = 'tags.connection';
+export const PRS_MODEL_NAME = 'tags.model';
 
 export const ERR_PAYLOAD_INVALID = 'payload invalid';
 export const ERR_PARSERS_BODY = 'body not parsed safely';
@@ -152,8 +156,8 @@ class Preconditions {
  *
  * The connection is automatically checked out using the value of the conn
  * constructor parameter but can be overridden by setting the constant
- * KEY_CONNECTION as a route tag. The model is determined by setting the
- * KEY_MODEL_NAME tag.
+ * PRS_CONNECTION as a route tag. The model is determined by setting the
+ * PRS_MODEL_NAME tag.
  * Each route has a set of preconditions that must pass before the operation
  * is executed, these are implemented in an internal Preconditions class. In
  * particular, the query and body properties must be suitably verified before
@@ -201,7 +205,7 @@ export class ApiController<C> implements Resource {
         let that = this;
 
         return doFuture(function* () {
-            let name = String(req.prs.getOrElse(KEY_CONNECTION, 'main'));
+            let name = String(req.prs.getOrElse(PRS_CONNECTION, 'main'));
 
             let mconn = yield getUserConnection(name);
 
@@ -211,7 +215,7 @@ export class ApiController<C> implements Resource {
                 );
 
             let modelName = <string>(
-                req.prs.getOrElse(KEY_MODEL_NAME, req.route.path)
+                req.prs.getOrElse(PRS_MODEL_NAME, req.route.path)
             );
 
             let mmodel = that.models.getInstance(mconn.get(), modelName);
