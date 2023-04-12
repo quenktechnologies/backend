@@ -19,7 +19,7 @@
     "@quenk/preconditions": "^5.6.0",
     "@quenk/search-filters": "^2.8.0",
     "@quenk/search-filters-mongodb": "^1.2.1",
-    "@quenk/tendril": "^0.43.15",
+    "@quenk/tendril": "^0.44.0",
     "@quenk/wml": "^2.13.1",
     "bcryptjs": "^2.4.3",
     "mongodb": "^5.1.0"
