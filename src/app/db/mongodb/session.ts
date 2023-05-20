@@ -1,7 +1,6 @@
 import * as session from 'express-session';
-import * as cmongo from 'connect-mongodb-session';
 
-import { MongoDBStore } from 'connect-mongodb-session';
+import MongoStore, { ConnectMongoOptions } from 'connect-mongo/build/main/lib/MongoStore';
 
 import { isString } from '@quenk/noni/lib/data/type';
 import { Maybe, nothing, just } from '@quenk/noni/lib/data/maybe';
@@ -9,7 +8,6 @@ import {
     Future,
     raise,
     pure,
-    fromCallback
 } from '@quenk/noni/lib/control/monad/future';
 
 import {
@@ -24,7 +22,7 @@ import {
 export class MongoDBSessionStore implements SessionStoreConnection {
     constructor(public expressSession: SessionFunc, public opts?: object) {}
 
-    client: Maybe<cmongo.MongoDBStore> = nothing();
+    client: Maybe<MongoStore> = nothing();
 
     /**
      * create a new MongoDBSessionStore instance.
@@ -34,17 +32,15 @@ export class MongoDBSessionStore implements SessionStoreConnection {
     }
 
     open(): Future<void> {
-        let { opts, expressSession } = this;
+        let { opts } = this;
 
-        return fromCallback(cb => {
-            let Cons: MongoDBStore = cmongo(expressSession);
+        return Future.do(async ()=>  {
 
             if (!isString((<{ uri: string }>opts).uri))
-                return cb(uriNotConfiguredErr());
+                throw uriNotConfiguredErr();
 
-            this.client = just(new Cons(<cmongo.ConnectionInfo>opts));
+            this.client = just(MongoStore.create(<ConnectMongoOptions>opts));
 
-            cb(null);
         });
     }
 
@@ -57,8 +53,10 @@ export class MongoDBSessionStore implements SessionStoreConnection {
     }
 
     close(): Future<void> {
-        if (this.client.isNothing()) return pure(<void>undefined);
-        return fromCallback(cb => this.client.get().client.close(cb));
+      return Future.do(async ()=> {
+        if (this.client.isJust())
+         await this.client.get().close();
+      });
     }
 }
 
