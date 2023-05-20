@@ -22,6 +22,7 @@
     "@quenk/tendril": "^0.44.0",
     "@quenk/wml": "^2.13.1",
     "bcryptjs": "^2.4.3",
+    "connect-mongodb-session": "^3.1.1",
     "mongodb": "^5.1.0"
   },
   "devDependencies": {
