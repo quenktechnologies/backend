@@ -1,14 +1,12 @@
 import * as session from 'express-session';
 
-import MongoStore, { ConnectMongoOptions } from 'connect-mongo/build/main/lib/MongoStore';
+import MongoStore, {
+    ConnectMongoOptions
+} from 'connect-mongo/build/main/lib/MongoStore';
 
 import { isString } from '@quenk/noni/lib/data/type';
 import { Maybe, nothing, just } from '@quenk/noni/lib/data/maybe';
-import {
-    Future,
-    raise,
-    pure,
-} from '@quenk/noni/lib/control/monad/future';
+import { Future, raise, pure } from '@quenk/noni/lib/control/monad/future';
 
 import {
     SessionFunc,
@@ -34,13 +32,11 @@ export class MongoDBSessionStore implements SessionStoreConnection {
     open(): Future<void> {
         let { opts } = this;
 
-        return Future.do(async ()=>  {
-
+        return Future.do(async () => {
             if (!isString((<{ uri: string }>opts).uri))
                 throw uriNotConfiguredErr();
 
             this.client = just(MongoStore.create(<ConnectMongoOptions>opts));
-
         });
     }
 
@@ -53,10 +49,9 @@ export class MongoDBSessionStore implements SessionStoreConnection {
     }
 
     close(): Future<void> {
-      return Future.do(async ()=> {
-        if (this.client.isJust())
-         await this.client.get().close();
-      });
+        return Future.do(async () => {
+            if (this.client.isJust()) await this.client.get().close();
+        });
     }
 }
 
