@@ -58,5 +58,5 @@ const notConnectedErr = () =>
 /**
  * create a new MongoDBSession store instance.
  */
-export const create = (_:SessionFunc, opts: ConnectMongoOptions = {}) => 
-  MongoDBSessionStore.create(opts);
+export const create = (_: SessionFunc, opts: ConnectMongoOptions = {}) =>
+    MongoDBSessionStore.create(opts);

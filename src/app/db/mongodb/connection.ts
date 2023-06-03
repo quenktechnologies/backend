@@ -9,18 +9,16 @@ const DEFAULT_URL = 'mongodb://localhost';
 /**
  * MongoDBUrl string used to connect to a database or collection.
  */
-export type MongoDBUrl = string; 
+export type MongoDBUrl = string;
 
 /**
  * MonogoDBConnectionOptions
  */
 export interface MongoDBConnectionOptions extends MongoClientOptions {
-
-  /**
-   * url used to establish the db connection.
-   */
-  url?: MongoDBUrl 
-
+    /**
+     * url used to establish the db connection.
+     */
+    url?: MongoDBUrl;
 }
 
 /**
@@ -60,6 +58,8 @@ export class MongoDBConnection implements conn.Connection {
 /**
  * create a MongoDB connection.
  */
-export const create = (opts:MongoDBConnectionOptions = {}) => 
-  MongoDBConnection.create(opts.url || process.env.MONGO_URL || DEFAULT_URL, opts);
-
+export const create = (opts: MongoDBConnectionOptions = {}) =>
+    MongoDBConnection.create(
+        opts.url || process.env.MONGO_URL || DEFAULT_URL,
+        opts
+    );
