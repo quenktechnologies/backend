@@ -4,6 +4,25 @@ import { MongoClient, Db, MongoClientOptions } from 'mongodb';
 
 import { Future, pure, liftP } from '@quenk/noni/lib/control/monad/future';
 
+const DEFAULT_URL = 'mongodb://localhost';
+
+/**
+ * MongoDBUrl string used to connect to a database or collection.
+ */
+export type MongoDBUrl = string; 
+
+/**
+ * MonogoDBConnectionOptions
+ */
+export interface MongoDBConnectionOptions extends MongoClientOptions {
+
+  /**
+   * url used to establish the db connection.
+   */
+  url?: MongoDBUrl 
+
+}
+
 /**
  * MongoDBConnection Connection implementation.
  *
@@ -19,8 +38,8 @@ export class MongoDBConnection implements conn.Connection {
      * the open() method is called.
      */
     static create(
-        url: string,
-        opts: MongoClientOptions = {}
+        url: MongoDBUrl,
+        opts: MongoDBConnectionOptions = {}
     ): MongoDBConnection {
         return new MongoDBConnection(new MongoClient(url, opts));
     }
@@ -39,6 +58,8 @@ export class MongoDBConnection implements conn.Connection {
 }
 
 /**
- * connector for creating Connections to a MongoDB instance.
+ * create a MongoDB connection.
  */
-export const connector = MongoDBConnection.create;
+export const create = (opts:MongoDBConnectionOptions = {}) => 
+  MongoDBConnection.create(opts.url || process.env.MONGO_URL || DEFAULT_URL, opts);
+

@@ -4,7 +4,6 @@ import MongoStore, {
     ConnectMongoOptions
 } from 'connect-mongo/build/main/lib/MongoStore';
 
-import { isString } from '@quenk/noni/lib/data/type';
 import { Maybe, nothing, just } from '@quenk/noni/lib/data/maybe';
 import { Future, raise, pure } from '@quenk/noni/lib/control/monad/future';
 
@@ -18,24 +17,20 @@ import {
  * store.
  */
 export class MongoDBSessionStore implements SessionStoreConnection {
-    constructor(public expressSession: SessionFunc, public opts?: object) {}
+    constructor(public opts: ConnectMongoOptions) {}
 
     client: Maybe<MongoStore> = nothing();
 
     /**
      * create a new MongoDBSessionStore instance.
      */
-    static create(expressSession: SessionFunc, opts?: object) {
-        return new MongoDBSessionStore(expressSession, opts);
+    static create(opts: ConnectMongoOptions) {
+        return new MongoDBSessionStore(opts);
     }
 
     open(): Future<void> {
         let { opts } = this;
-
         return Future.do(async () => {
-            if (!isString((<{ uri: string }>opts).uri))
-                throw uriNotConfiguredErr();
-
             this.client = just(MongoStore.create(<ConnectMongoOptions>opts));
         });
     }
@@ -55,13 +50,13 @@ export class MongoDBSessionStore implements SessionStoreConnection {
     }
 }
 
-const uriNotConfiguredErr = () =>
-    new Error('tendril-session-mongodb: No uri specified!');
-
 const notConnectedErr = () =>
     new Error(
         'tendril-session-mongodb: Cannot checkout client, not initialized!'
     );
 
-export const provider = (expressSession: SessionFunc, opts?: object) =>
-    new MongoDBSessionStore(expressSession, opts);
+/**
+ * create a new MongoDBSession store instance.
+ */
+export const create = (_:SessionFunc, opts: ConnectMongoOptions = {}) => 
+  MongoDBSessionStore.create(opts);
