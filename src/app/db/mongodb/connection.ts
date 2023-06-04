@@ -3,6 +3,7 @@ import * as conn from '@quenk/tendril/lib/app/connection';
 import { MongoClient, Db, MongoClientOptions } from 'mongodb';
 
 import { Future, pure, liftP } from '@quenk/noni/lib/control/monad/future';
+import { Record, exclude } from '@quenk/noni/lib/data/record';
 
 const DEFAULT_URL = 'mongodb://localhost';
 
@@ -61,5 +62,5 @@ export class MongoDBConnection implements conn.Connection {
 export const create = (opts: MongoDBConnectionOptions = {}) =>
     MongoDBConnection.create(
         opts.url || process.env.MONGO_URL || DEFAULT_URL,
-        opts
+        exclude(<Record<string>>(<object>opts), 'url')
     );
