@@ -5,8 +5,6 @@ import { Future, pure, doFuture } from '@quenk/noni/lib/control/monad/future';
 import { unsafeGet } from '@quenk/noni/lib/data/record/path';
 import { merge } from '@quenk/noni/lib/data/record';
 
-import { getInstance } from '@quenk/tendril/lib/app/connection';
-
 import { succeed, fail } from '@quenk/preconditions/lib/result';
 
 import {
@@ -26,15 +24,18 @@ export type CollectionName = string;
 export type FieldName = string;
 
 /**
+ * Provider provides a collection.
+ */
+export type Provider = (name?: CollectionName) => Future<mongodb.Collection>;
+
+/**
  * exists checks if a value exists in the database before proceeding.
  */
 export const exists =
-    <A>(collection: CollectionName, field = 'id', dbid = 'main') =>
+    <A>(getter: Provider, collection: CollectionName, field = 'id') =>
     (value: A): AsyncResult<A, A> =>
         doFuture(function* () {
-            let db = yield getMain(dbid);
-
-            let n = yield count(db.collection(collection), { [field]: value });
+            let n = yield count(yield getter(collection), { [field]: value });
 
             return pure(
                 n < 1
@@ -48,10 +49,10 @@ export const exists =
  * database.
  */
 export const unique =
-    <A>(collection: CollectionName, field: FieldName, dbid = 'main') =>
+    <A>(getter: Provider, collection: CollectionName, field: FieldName) =>
     (value: A): AsyncResult<A, A> =>
         doFuture(function* () {
-            let db = yield getMain(dbid);
+            let db = yield getter(collection);
 
             let n = yield count(db.collection(collection), {
                 [field]: value
@@ -68,9 +69,9 @@ export const unique =
  */
 export interface IncOptions {
     /**
-     * collection that holds the counters.
+     * collection provider to use.
      */
-    collection?: CollectionName;
+    collection: Provider;
 
     /**
      * filter to apply to the collection to find the desired object with the
@@ -84,20 +85,13 @@ export interface IncOptions {
     field: FieldName;
 
     /**
-     * dbid to use to access mongodb.
-     */
-    dbid?: string;
-
-    /**
      * target is the property in the document to store the incremented value at
      */
     target?: string;
 }
 
 const defaultIncOptions = {
-    collection: 'counters',
     filter: {},
-    dbid: 'main',
     target: 'id'
 };
 
@@ -116,7 +110,7 @@ export const inc =
         doFuture(function* () {
             let conf = merge(defaultIncOptions, incOpts);
 
-            let db = yield getMain(conf.dbid);
+            let db = yield conf.collection();
 
             let target = db.collection(conf.collection);
 
@@ -135,6 +129,3 @@ export const inc =
 
             return pure(succeed(value));
         });
-
-const getMain = (id: string): Future<mongodb.Db> =>
-    getInstance().get(id).get().checkout();
