@@ -52,9 +52,7 @@ export const unique =
     <A>(getter: Provider, collection: CollectionName, field: FieldName) =>
     (value: A): AsyncResult<A, A> =>
         doFuture(function* () {
-            let db = yield getter(collection);
-
-            let n = yield count(db.collection(collection), {
+            let n = yield count(yield getter(collection), {
                 [field]: value
             });
             return pure(
@@ -110,9 +108,7 @@ export const inc =
         doFuture(function* () {
             let conf = merge(defaultIncOptions, incOpts);
 
-            let db = yield conf.collection();
-
-            let target = db.collection(conf.collection);
+            let target = yield conf.collection();
 
             let update = { $inc: { [conf.field]: 1 } };
 
