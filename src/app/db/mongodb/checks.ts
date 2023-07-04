@@ -24,18 +24,18 @@ export type CollectionName = string;
 export type FieldName = string;
 
 /**
- * Provider provides a collection.
+ * CollectionProvider provides access to a mongodb collection.
  */
-export type Provider = (name?: CollectionName) => Future<mongodb.Collection>;
+export type CollectionProvider = () => Future<mongodb.Collection>;
 
 /**
  * exists checks if a value exists in the database before proceeding.
  */
 export const exists =
-    <A>(getter: Provider, collection: CollectionName, field = 'id') =>
+    <A>(provider: CollectionProvider, field = 'id') =>
     (value: A): AsyncResult<A, A> =>
         doFuture(function* () {
-            let n = yield count(yield getter(collection), { [field]: value });
+            let n = yield count(yield provider(), { [field]: value });
 
             return pure(
                 n < 1
@@ -49,10 +49,10 @@ export const exists =
  * database.
  */
 export const unique =
-    <A>(getter: Provider, collection: CollectionName, field: FieldName) =>
+    <A>(provider: CollectionProvider, field: FieldName) =>
     (value: A): AsyncResult<A, A> =>
         doFuture(function* () {
-            let n = yield count(yield getter(collection), {
+            let n = yield count(yield provider(), {
                 [field]: value
             });
             return pure(
@@ -69,7 +69,7 @@ export interface IncOptions {
     /**
      * collection provider to use.
      */
-    collection: Provider;
+    collection: CollectionProvider;
 
     /**
      * filter to apply to the collection to find the desired object with the
