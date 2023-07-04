@@ -1,38 +1,24 @@
 import { assert } from '@quenk/test/lib/assert';
 
-import { pure, voidPure } from '@quenk/noni/lib/control/monad/future';
-
-import { Pool } from '@quenk/tendril/lib/app/connection';
+import { pure } from '@quenk/noni/lib/control/monad/future';
 
 import { Testkit } from '../../../../lib/app/db/mongodb/testkit';
 import { exists, inc, unique } from '../../../../lib/app/db/mongodb/checks';
 
 let dbkit = new Testkit({ dropDatabase: true, removeAllCollections: true });
 
+const getCol = (name: string) => () => pure(dbkit.db.collection(name));
+
 describe('checks', () => {
     before(async () => {
         await dbkit.setUp();
-
-        Pool.getInstance().conns['mongo'] = {
-            open() {
-                return voidPure;
-            },
-
-            checkout() {
-                return pure(dbkit.db);
-            },
-
-            close() {
-                return voidPure;
-            }
-        };
     });
 
     describe('exists', () => {
         it('should pass if the value exists', async () => {
             await dbkit.populate('users', [{ id: 1 }, { id: 2 }, { id: 3 }]);
 
-            let result = await exists('users', 'id', 'mongo')(2);
+            let result = await exists(getCol('users'), 'id')(2);
 
             assert(result.isRight()).true();
 
@@ -42,7 +28,7 @@ describe('checks', () => {
         it('should fail if the value does not exist', async () => {
             await dbkit.populate('users', [{ id: 1 }, { id: 2 }, { id: 3 }]);
 
-            let result = await exists('users', 'id', 'mongo')(4);
+            let result = await exists(getCol('users'), 'id')(4);
 
             assert(result.isLeft()).true();
         });
@@ -52,7 +38,7 @@ describe('checks', () => {
         it('should pass if the value does not exist', async () => {
             await dbkit.populate('users', [{ id: 1 }, { id: 2 }, { id: 3 }]);
 
-            let result = await unique('users', 'id', 'mongo')(4);
+            let result = await unique(getCol('users'), 'id')(4);
 
             assert(result.isRight()).true();
 
@@ -62,7 +48,7 @@ describe('checks', () => {
         it('should fail if the value exists', async () => {
             await dbkit.populate('users', [{ id: 1 }, { id: 2 }, { id: 3 }]);
 
-            let result = await unique('users', 'id', 'mongo')(1);
+            let result = await unique(getCol('users'), 'id')(1);
 
             assert(result.isLeft()).true();
         });
@@ -76,11 +62,10 @@ describe('checks', () => {
             ]);
 
             let result = await inc({
-                collection: 'settings',
+                collection: getCol('settings'),
                 filter: { id: 'conf' },
                 field: 'users',
-                target: 'counter',
-                dbid: 'mongo'
+                target: 'counter'
             })({ active: true });
 
             assert(result.isRight()).true();
@@ -94,11 +79,10 @@ describe('checks', () => {
             await dbkit.populate('settings', [{ id: 'conf', users: 5 }]);
 
             let result = await inc({
-                collection: 'settings',
+                collection: getCol('settings'),
                 filter: { id: 'conf' },
                 field: 'users',
-                target: 'counter',
-                dbid: 'mongo'
+                target: 'counter'
             })({ active: true });
 
             assert(result.isRight()).true();
